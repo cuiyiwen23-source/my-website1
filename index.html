@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>预算消耗管理系统</title>
+<title>蓝景预算&业绩管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -12,21 +12,22 @@
 ──────────────────────────────────────────────── */
 :root{
   /* surfaces */
-  --bg:   #f5f4f0;
+  --bg:   #f6f7fb;
   --s0:   #ffffff;
-  --s1:   #f0efeb;
-  --s2:   #e8e7e2;
+  --s1:   #f4f6fb;
+  --s2:   #eef2f8;
   /* borders */
-  --b0:   #e3e2dd;
-  --b1:   #cac9c3;
+  --b0:   rgba(15,23,42,.10);
+  --b1:   rgba(15,23,42,.16);
   /* ink */
-  --ink:  #18181b;
-  --i2:   #52525b;
-  --i3:   #a1a1aa;
-  --i4:   #d4d4d8;
+  --ink:  #0b1220;
+  --i2:   rgba(15,23,42,.72);
+  --i3:   rgba(15,23,42,.52);
+  --i4:   rgba(15,23,42,.32);
   /* semantic */
   --blu:  #2563eb;
-  --blu-t:rgba(37,99,235,.06);
+  --blu2: #0ea5e9;
+  --blu-t:rgba(37,99,235,.07);
   --grn:  #16a34a;
   --grn-t:rgba(22,163,74,.07);
   --amb:  #d97706;
@@ -39,15 +40,26 @@
   /* geometry */
   --r: 8px;
   --r2:12px;
-  --sh: 0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
-  --sh2:0 4px 16px rgba(0,0,0,.06),0 1px 4px rgba(0,0,0,.04);
+  --sh:  0 1px 2px rgba(15,23,42,.06),0 1px 1px rgba(15,23,42,.04);
+  --sh2: 0 10px 30px rgba(15,23,42,.10),0 1px 3px rgba(15,23,42,.06);
+  --sh3: 0 18px 60px rgba(15,23,42,.14),0 2px 8px rgba(15,23,42,.08);
 }
 
 /* ── RESET ── */
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:13.5px;
-  line-height:1.55;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{
+  background:
+    radial-gradient(1200px 700px at 18% 10%, rgba(37,99,235,.10), transparent 60%),
+    radial-gradient(900px 600px at 86% 14%, rgba(14,165,233,.10), transparent 55%),
+    linear-gradient(180deg, var(--bg), #f7f8fc);
+  color:var(--ink);
+  font-family:var(--f);
+  font-size:13.5px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale
+}
 .mono{font-family:var(--fm)}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -57,24 +69,45 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:13.5px
    LOGIN SCREEN
 ──────────────────────────────────────────────── */
 #ls{
-  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-  background:var(--bg);z-index:9999;
+  position:fixed;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  z-index:9999;
+  padding:28px;
 }
-.lw{width:360px}
+.lw{
+  width:392px;max-width:100%;
+  background:rgba(255,255,255,.80);
+  border:1px solid var(--b0);
+  border-radius:18px;
+  box-shadow:var(--sh3);
+  padding:26px 22px 22px;
+  backdrop-filter:blur(12px);
+  position:relative;
+  overflow:hidden;
+}
+.lw::before{
+  content:'';
+  position:absolute;inset:-2px;
+  background:radial-gradient(560px 220px at 30% 0%, rgba(37,99,235,.18), transparent 55%),
+             radial-gradient(520px 220px at 86% 10%, rgba(14,165,233,.16), transparent 58%);
+  pointer-events:none;
+  opacity:.9;
+}
+.lw > *{position:relative}
 .l-pre{
   font-size:9.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;
-  color:var(--i3);margin-bottom:32px;display:flex;align-items:center;gap:10px;
+  color:var(--i3);margin-bottom:14px;display:flex;align-items:center;gap:10px;
 }
 .l-pre::before,.l-pre::after{content:'';flex:1;height:1px;background:var(--b0)}
-.l-h{font-size:28px;font-weight:600;letter-spacing:-.7px;margin-bottom:6px}
-.l-s{font-size:13px;color:var(--i3);margin-bottom:32px}
+.l-h{font-size:24px;font-weight:650;letter-spacing:-.6px;margin-bottom:6px}
+.l-s{font-size:12.5px;color:var(--i3);margin-bottom:18px}
 .fl{display:block;font-size:9.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--i3);margin-bottom:5px}
 .fi{
   width:100%;padding:10px 12px;background:var(--s0);border:1px solid var(--b0);
   border-radius:var(--r);color:var(--ink);font-size:13.5px;font-family:var(--f);
   outline:none;transition:border-color .12s,box-shadow .12s;
 }
-.fi:focus{border-color:var(--blu);box-shadow:0 0 0 3px var(--blu-t)}
+.fi:focus{border-color:rgba(37,99,235,.55);box-shadow:0 0 0 4px rgba(37,99,235,.12)}
 select.fi option{background:var(--s0)}
 .fg{margin-bottom:14px}
 .l-err{
@@ -90,13 +123,19 @@ select.fi option{background:var(--s0)}
 .btn{
   display:inline-flex;align-items:center;gap:5px;padding:8px 14px;
   border-radius:var(--r);font-size:12.5px;font-family:var(--f);cursor:pointer;
-  border:1px solid transparent;transition:all .12s;font-weight:500;
+  border:1px solid transparent;transition:transform .12s,box-shadow .12s,background .12s,border-color .12s,color .12s;
+  font-weight:500;
   letter-spacing:-.1px;white-space:nowrap;line-height:1;
 }
-.bp{background:var(--ink);color:#fff;border-color:var(--ink)}
-.bp:hover{background:#27272a}
-.bo{background:var(--s0);color:var(--i2);border-color:var(--b0)}
-.bo:hover{background:var(--s1);border-color:var(--b1);color:var(--ink)}
+.btn:active{transform:translateY(1px)}
+.bp{
+  background:linear-gradient(135deg, var(--ink), #111a2e 55%, #0b1220);
+  color:#fff;border-color:rgba(15,23,42,.22);
+  box-shadow:0 10px 22px rgba(15,23,42,.16);
+}
+.bp:hover{filter:brightness(1.02);box-shadow:0 14px 34px rgba(15,23,42,.20)}
+.bo{background:rgba(255,255,255,.78);color:var(--i2);border-color:var(--b0);backdrop-filter:blur(6px)}
+.bo:hover{background:rgba(255,255,255,.92);border-color:var(--b1);color:var(--ink);box-shadow:var(--sh)}
 .br{background:var(--red-t);color:var(--red);border-color:rgba(220,38,38,.15)}
 .br:hover{background:rgba(220,38,38,.11)}
 .bg{background:var(--grn-t);color:var(--grn);border-color:rgba(22,163,74,.15)}
@@ -113,8 +152,10 @@ select.fi option{background:var(--s0)}
 
 /* ── SIDEBAR ── */
 .sb{
-  width:196px;min-height:100vh;
-  background:var(--s0);border-right:1px solid var(--b0);
+  width:212px;min-height:100vh;
+  background:rgba(255,255,255,.78);
+  border-right:1px solid var(--b0);
+  backdrop-filter:blur(10px);
   display:flex;flex-direction:column;
   position:fixed;left:0;top:0;bottom:0;z-index:100;
 }
@@ -134,8 +175,12 @@ select.fi option{background:var(--s0)}
   cursor:pointer;color:var(--i3);font-size:12.5px;transition:all .1s;
   margin-bottom:1px;user-select:none;letter-spacing:-.1px;
 }
-.ni:hover{background:var(--s1);color:var(--i2)}
-.ni.on{background:var(--s2);color:var(--ink);font-weight:500}
+.ni:hover{background:rgba(15,23,42,.04);color:var(--i2)}
+.ni.on{
+  background:linear-gradient(135deg, rgba(37,99,235,.10), rgba(14,165,233,.08));
+  border:1px solid rgba(37,99,235,.14);
+  color:var(--ink);font-weight:600
+}
 .ni-dot{
   width:4px;height:4px;border-radius:50%;background:var(--i4);
   flex-shrink:0;transition:background .1s;
@@ -158,15 +203,16 @@ select.fi option{background:var(--s0)}
 .lo-link:hover{color:var(--red)}
 
 /* ── MAIN ── */
-.main{margin-left:196px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.main{margin-left:212px;flex:1;display:flex;flex-direction:column;min-height:100vh}
 .topbar{
-  height:48px;background:var(--s0);border-bottom:1px solid var(--b0);
+  height:56px;background:rgba(255,255,255,.78);border-bottom:1px solid var(--b0);
+  backdrop-filter:blur(10px);
   display:flex;align-items:center;justify-content:space-between;
   padding:0 28px;position:sticky;top:0;z-index:50;
 }
 .tb-title{font-size:13px;font-weight:500;color:var(--ink);letter-spacing:-.2px}
 .tb-right{display:flex;gap:5px;align-items:center}
-.pc{padding:28px 32px 60px;display:none}
+.pc{padding:30px 36px 60px;display:none}
 .pc.on{display:block}
 
 /* ── PAGE HEADER ── */
@@ -221,10 +267,13 @@ select.fi option{background:var(--s0)}
 /* ────────────────────────────────────────────────
    STAT CARDS
 ──────────────────────────────────────────────── */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .sc{
-  background:var(--s0);border:1px solid var(--b0);border-radius:var(--r2);
+  background:rgba(255,255,255,.82);
+  border:1px solid var(--b0);
+  border-radius:var(--r2);
   padding:16px 18px;position:relative;overflow:hidden;
+  box-shadow:var(--sh);
 }
 .sc-bar{position:absolute;left:0;top:12px;bottom:12px;width:2px;border-radius:0 1px 1px 0}
 .sc-lbl{font-size:9.5px;font-weight:600;letter-spacing:.13em;color:var(--i3);text-transform:uppercase;margin-bottom:8px;padding-left:10px}
@@ -234,7 +283,13 @@ select.fi option{background:var(--s0)}
 /* ────────────────────────────────────────────────
    CARD
 ──────────────────────────────────────────────── */
-.card{background:var(--s0);border:1px solid var(--b0);border-radius:var(--r2);padding:18px 20px}
+.card{
+  background:rgba(255,255,255,.82);
+  border:1px solid var(--b0);
+  border-radius:var(--r2);
+  padding:18px 20px;
+  box-shadow:var(--sh2);
+}
 .card+.card,.g2+.card,.card+.g2{margin-top:10px}
 .ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:13px;gap:8px}
 .ch-l{display:flex;flex-direction:column;gap:1px}
@@ -256,7 +311,7 @@ thead th{
 }
 tbody tr{border-bottom:1px solid var(--b0);transition:background .08s}
 tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:var(--s1)}
+tbody tr:hover{background:rgba(15,23,42,.03)}
 tbody td{padding:9px 12px;font-size:13px;vertical-align:middle;color:var(--ink)}
 tbody tr[data-c]{cursor:pointer}
 
@@ -296,10 +351,12 @@ tbody tr[data-c]{cursor:pointer}
 ──────────────────────────────────────────────── */
 .ug{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px}
 .uc{
-  background:var(--bg);border:1px dashed var(--b1);border-radius:var(--r);
+  background:rgba(255,255,255,.55);
+  border:1px dashed var(--b1);
+  border-radius:var(--r);
   padding:16px;text-align:center;transition:all .12s;cursor:pointer;position:relative;
 }
-.uc:hover{border-color:var(--blu);background:var(--blu-t);border-style:solid}
+.uc:hover{border-color:rgba(37,99,235,.55);background:rgba(37,99,235,.06);border-style:solid;box-shadow:var(--sh)}
 .uc.done{border-color:var(--grn);border-style:solid;background:var(--grn-t)}
 .uc input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .uc-ico{font-size:16px;margin-bottom:6px;opacity:.7}
@@ -441,13 +498,38 @@ tbody tr[data-c]{cursor:pointer}
   position:fixed;bottom:18px;right:18px;background:var(--ink);color:#fff;
   border-radius:var(--r);padding:9px 14px;font-size:12px;
   display:flex;align-items:center;gap:8px;
-  box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:9998;
+  box-shadow:var(--sh3);z-index:9998;
   transform:translateY(44px);opacity:0;transition:all .2s;letter-spacing:-.1px;
 }
 .toast.show{transform:translateY(0);opacity:1}
 .toast-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
 .tok .toast-dot{background:#4ade80}
 .terr .toast-dot{background:#f87171}
+
+/* ────────────────────────────────────────────────
+   RESPONSIVE
+──────────────────────────────────────────────── */
+@media (max-width: 920px){
+  .layout{flex-direction:column}
+  .sb{
+    width:100%;
+    min-height:auto;
+    position:sticky;
+    top:0;
+    bottom:auto;
+    border-right:none;
+    border-bottom:1px solid var(--b0);
+  }
+  .sb-nav{display:flex;gap:6px;flex-wrap:wrap;padding:10px 12px}
+  .nsec{display:none}
+  .ni{margin-bottom:0}
+  .main{margin-left:0}
+  .topbar{position:sticky;top:56px}
+  .pc{padding:22px 16px 46px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -458,13 +540,12 @@ tbody tr[data-c]{cursor:pointer}
 <div id="ls">
   <div class="lw">
     <div class="l-pre">Budget Management</div>
-    <div class="l-h">预算消耗管理</div>
+    <div class="l-h">蓝景预算&业绩管理系统</div>
     <p class="l-s">请登录账号继续访问</p>
     <div class="fg"><label class="fl">用户名</label><input class="fi" type="text" id="lun" placeholder="用户名" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div class="fg"><label class="fl">密码</label><input class="fi" type="password" id="lpw" placeholder="密码" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div class="l-err" id="lerr">用户名或密码有误，请重试</div>
     <button class="btn bp blg" style="width:100%;justify-content:center" onclick="doLogin()">登录</button>
-    <p class="l-hint">初始管理员账号：admin / 123456</p>
   </div>
 </div>
 
@@ -478,7 +559,7 @@ tbody tr[data-c]{cursor:pointer}
 <aside class="sb">
   <div class="sb-head">
     <div class="sb-brand">Budget System</div>
-    <div class="sb-name">预算消耗<br>管理系统</div>
+    <div class="sb-name">蓝景预算&业绩<br>管理系统</div>
   </div>
   <nav class="sb-nav">
     <div class="nsec">核心</div>
@@ -832,6 +913,83 @@ const S = {
 };
 
 // ═══════════════════════════════════════════════════════════
+//  PERSISTENCE (localStorage)
+// ═══════════════════════════════════════════════════════════
+const STORE_KEY='budget_mgr_state_v1';
+let _svt;
+function scheduleSave(){
+  clearTimeout(_svt);
+  _svt=setTimeout(saveStateNow, 250);
+}
+function saveStateNow(){
+  try{
+    const payload={
+      v:1,
+      ts:Date.now(),
+      accounts:S.accounts,
+      rules:S.rules,
+      batches:S.batches,
+      costPeriods:S.costPeriods,
+      budgets:S.budgets,
+      team:S.team
+    };
+    localStorage.setItem(STORE_KEY, JSON.stringify(payload));
+  }catch(err){
+    // 常见：QuotaExceededError
+    try{ toast('本地保存失败：数据量可能过大（localStorage 限制）','terr'); }catch(_){}
+  }
+}
+function loadState(){
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    if(!raw) return false;
+    const data=JSON.parse(raw);
+    if(!data||typeof data!=='object') return false;
+    if(Array.isArray(data.accounts))   S.accounts=data.accounts;
+    if(Array.isArray(data.rules))      S.rules=data.rules;
+    if(Array.isArray(data.batches))    S.batches=data.batches;
+    if(Array.isArray(data.costPeriods))S.costPeriods=data.costPeriods;
+    if(data.budgets&&typeof data.budgets==='object') S.budgets=data.budgets;
+    if(data.team&&typeof data.team==='object')       S.team=data.team;
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+function refreshUploadCards(){
+  // 规则
+  const rc=document.getElementById('rulesCard'),rs=document.getElementById('rulesStatus');
+  if(rc&&rs){
+    if(S.rules?.length) markDone('rulesCard','rulesStatus',`✓ ${S.rules.length} 条规则`);
+    else{rc.classList.remove('done');rs.textContent='点击上传 rules.csv';}
+  }
+  // 加微批次
+  const dc=document.getElementById('dataCard'),ds=document.getElementById('dataStatus');
+  if(dc&&ds){
+    if(S.batches?.length) markDone('dataCard','dataStatus',`✓ 共 ${fmtN(visibleAllR().length)} 条（${S.batches.length} 批）`);
+    else{dc.classList.remove('done');ds.textContent='点击上传 data.csv';}
+  }
+  // 消耗
+  const cc=document.getElementById('costCard'),cs=document.getElementById('costStatus');
+  if(cc&&cs){
+    if(S.costPeriods?.length) markDone('costCard','costStatus',`✓ ${fmtN(S.costPeriods.length)} 条消耗记录`);
+    else{cc.classList.remove('done');cs.textContent='点击上传 cost.csv';}
+  }
+  // 名单
+  const tc=document.getElementById('teamCard'),ts=document.getElementById('teamStatus');
+  if(tc&&ts){
+    const supN=Object.keys(S.team||{}).length;
+    const memN=Object.values(S.team||{}).flat().length;
+    if(supN) markDone('teamCard','teamStatus',`✓ ${supN} 位主管，${memN} 位顾问`);
+    else{tc.classList.remove('done');ts.textContent='点击上传 team.csv';}
+  }
+    renderBatchList();
+  renderCostManual();
+  renderTeamGrid();
+    showPreview();
+}
+
+// ═══════════════════════════════════════════════════════════
 //  UTILITIES
 // ═══════════════════════════════════════════════════════════
 const fmt  = n => '¥'+Number(n).toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:0});
@@ -839,6 +997,14 @@ const fmtN = n => Number(n).toLocaleString('zh-CN');
 const pCls = p => p>=90?'hi':p>=60?'mi':'lo';
 const fDate= d => d.toISOString().slice(0,10);
 const allR = () => S.batches.flatMap(b=>b.records);
+function visibleGroup(){
+  return S.currentUser?.role==='supervisor' ? S.currentUser.group : null;
+}
+function visibleAllR(){
+  const g=visibleGroup();
+  if(!g) return allR();
+  return allR().filter(r=>lookupGroup(r.consultant)===g);
+}
 let _tt;
 function toast(msg,t='tok'){
   document.getElementById('tmsg').textContent=msg;
@@ -874,6 +1040,12 @@ function doLogin(){
   document.getElementById('uav').textContent=u.slice(0,1);
   document.getElementById('uname').textContent=u;
   document.getElementById('urole').textContent=acc.role==='admin'?'管理员':`组长 · ${acc.group}`;
+  // 权限控制：组长不允许访问「数据上传」「人员名单」
+  const isSup=acc.role==='supervisor';
+  const nu=document.getElementById('nav-upload');
+  const nt=document.getElementById('nav-team');
+  if(nu) nu.style.display=isSup?'none':'flex';
+  if(nt) nt.style.display=isSup?'none':'flex';
   if(acc.role==='admin'){
     document.getElementById('adm-sec').style.display='';
     document.getElementById('nav-admin').style.display='flex';
@@ -887,6 +1059,11 @@ function doLogout(){
   ['lun','lpw'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('adm-sec').style.display='none';
   document.getElementById('nav-admin').style.display='none';
+  // 退出后复原导航（避免下次管理员登录仍被隐藏）
+  const nu=document.getElementById('nav-upload');
+  const nt=document.getElementById('nav-team');
+  if(nu) nu.style.display='flex';
+  if(nt) nt.style.display='flex';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -901,6 +1078,7 @@ function loadRulesCSV(e){
     }).filter(r=>r.channel);
     markDone('rulesCard','rulesStatus',`✓ ${S.rules.length} 条规则`);
     renderCostManual();toast('渠道规则表加载成功');showPreview();
+    scheduleSave();
   });
 }
 
@@ -957,10 +1135,11 @@ function loadDataCSV(e){
     S.batches.push({id:Date.now(),name:f.name,uploadTime:new Date().toLocaleString('zh-CN'),records:recs});
     autoInitBudgets();
     renderBatchList();
-    markDone('dataCard','dataStatus',`✓ 共 ${fmtN(allR().length)} 条（${S.batches.length} 批）`);
+    markDone('dataCard','dataStatus',`✓ 共 ${fmtN(visibleAllR().length)} 条（${S.batches.length} 批）`);
     toast(`已载入 ${recs.length} 条加微记录`);
     document.getElementById('dataFile').value='';
     showPreview();
+    scheduleSave();
     // 上传后跳到仪表盘，自动切换到「全部」时间范围确保数据可见
     switchAllPagesTo('all');
     gp('dashboard');
@@ -1044,6 +1223,7 @@ function loadCostCSV(e){
     const n=newEntries.length;
     markDone('costCard','costStatus',`✓ ${n} 条消耗记录${overwritten>0?' (已覆盖'+overwritten+'条)':''}`);
     toast(`渠道消耗载入 ${n} 条${overwritten>0?'，覆盖旧数据 '+overwritten+' 条':''}`);
+    scheduleSave();
     // 如果已在仪表盘，重新渲染
     if(document.getElementById('page-dashboard').classList.contains('on')) renderDash();
   });
@@ -1073,6 +1253,7 @@ function loadTeamCSV(e){
       if(document.getElementById('page-dashboard').classList.contains('on')) renderDash();
       else gp('dashboard');
     }
+    scheduleSave();
   });
 }
 function syncTeamAccounts(){
@@ -1082,6 +1263,7 @@ function syncTeamAccounts(){
     if(!ex) S.accounts.push({u:sup,p:'123',role:'supervisor',group:grp});
     else{ex.group=grp;ex.role='supervisor';}
   });
+  scheduleSave();
 }
 
 function autoInitBudgets(){
@@ -1093,13 +1275,15 @@ function clearData(){
   document.getElementById('dataCard').classList.remove('done');
   document.getElementById('dataStatus').textContent='点击上传 data.csv';
   showPreview();toast('数据已清空');
+  scheduleSave();
 }
 function removeBatch(id){
   S.batches=S.batches.filter(b=>b.id!==id);renderBatchList();
-  const t=allR().length;
+  const t=visibleAllR().length;
   if(!S.batches.length){document.getElementById('dataCard').classList.remove('done');document.getElementById('dataStatus').textContent='点击上传 data.csv';}
   else markDone('dataCard','dataStatus',`✓ 共 ${fmtN(t)} 条（${S.batches.length} 批）`);
   showPreview();toast('批次已删除');
+  scheduleSave();
 }
 function renderBatchList(){
   document.getElementById('batchList').innerHTML=S.batches.map(b=>`
@@ -1112,27 +1296,74 @@ function renderBatchList(){
 }
 
 // Team UI
+function setBudgetFromTeam(name, v){
+  const n=Math.max(0, parseFloat(v)||0);
+  S.budgets[name]=n;
+  const b=document.getElementById(`b_${name}`);
+  if(b) b.value=n;
+  scheduleSave();
+  if(document.getElementById('page-dashboard')?.classList.contains('on')) renderDash();
+}
 function renderTeamGrid(){
   const keys=Object.keys(S.team);
   document.getElementById('teamCountLbl').textContent=
     keys.length?`${keys.length} 位主管 · ${Object.values(S.team).flat().length} 位顾问`:'管理主管与顾问归属关系';
   const el=document.getElementById('teamGrid');
   if(!keys.length){el.innerHTML='<div class="empty"><div class="empty-ic">◻</div><p>暂无名单</p></div>';return;}
-  el.innerHTML=keys.map(sup=>`
-    <div class="tc">
-      <div class="tc-hd">
-        <span class="tc-sup">${sup}</span>
-        <span class="tc-cnt">${S.team[sup].length} 人
-          <span onclick="removeSupTeam('${sup}')" style="cursor:pointer;color:var(--i4);margin-left:6px;font-size:9px;border:1px solid var(--b0);border-radius:3px;padding:1px 5px">移除</span>
-        </span>
-      </div>
-      <div class="tc-mems">${S.team[sup].map(m=>`<span class="tc-mem">${m}</span>`).join('')}</div>
-    </div>`).join('');
+  const rows=[];
+  keys.sort().forEach(sup=>{
+    (S.team[sup]||[]).slice().sort().forEach(mem=>{
+      if(S.budgets[mem]==null) S.budgets[mem]=50000;
+      rows.push({sup, mem, group:`${sup}组`, budget:S.budgets[mem]});
+    });
+  });
+  let lastSup='';
+  el.innerHTML=`
+    <div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th>主管</th>
+            <th>小组</th>
+            <th>顾问</th>
+            <th style="text-align:right">预算（元）</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r=>{
+            const isFirst=r.sup!==lastSup;lastSup=r.sup;
+            const supCell=isFirst
+              ? `<span style="font-weight:600">${r.sup}</span>
+                 <button class="btn br bxs" style="margin-left:8px" onclick="removeSupTeam('${r.sup}')">移除</button>`
+              : `<span style="color:transparent">.</span>`;
+            return `
+            <tr>
+              <td>${supCell}</td>
+              <td><span class="tag tb">${r.group}</span></td>
+              <td>${r.mem}</td>
+              <td style="text-align:right">
+                <input
+                  type="number" min="0" step="1000"
+                  value="${r.budget}"
+                  oninput="setBudgetFromTeam('${r.mem}', this.value)"
+                  style="width:120px;padding:6px 8px;background:rgba(255,255,255,.82);border:1px solid var(--b0);border-radius:8px;color:var(--ink);font-size:12.5px;font-family:var(--fm);text-align:right;outline:none;transition:border-color .1s"
+                  onfocus="this.style.borderColor='rgba(37,99,235,.55)'" onblur="this.style.borderColor='var(--b0)'"
+                >
+              </td>
+              <td></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  scheduleSave();
 }
 function removeSupTeam(sup){
   delete S.team[sup];
   S.accounts=S.accounts.filter(a=>!(a.u===sup&&a.role==='supervisor'));
   renderTeamGrid();toast(`已移除 ${sup}`);
+  scheduleSave();
 }
 function toggleAMP(){document.getElementById('addMemberPanel').classList.toggle('on');}
 function addMember(){
@@ -1144,6 +1375,7 @@ function addMember(){
   syncTeamAccounts();
   ['newSup','newMem'].forEach(id=>document.getElementById(id).value='');
   renderTeamGrid();toast('已添加');
+  scheduleSave();
 }
 
 // Cost manual
@@ -1184,6 +1416,7 @@ function saveCostPeriod(pid){
     }
   });
   if(n) toast(`已保存 ${n} 条消耗`); else toast('请填写消耗金额','terr');
+  scheduleSave();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1192,7 +1425,7 @@ function saveCostPeriod(pid){
 function computeDR(tf){
   const now=new Date();
   if(tf.period==='all'){
-    const ds=allR().map(r=>r.date).filter(Boolean).sort();
+    const ds=visibleAllR().map(r=>r.date).filter(Boolean).sort();
     if(!ds.length) return{start:'',end:'',label:'全部数据',grain:'month'};
     return{start:ds[0],end:ds[ds.length-1],label:'全部数据',grain:'month'};
   }
@@ -1217,12 +1450,13 @@ function computeDR(tf){
   }
 }
 function filterR(start,end,group=null){
+  const autoG=(group==null)?visibleGroup():group;
   return allR().filter(r=>{
     if(!r.date) return false;
     if(start&&r.date<start) return false;
     if(end&&r.date>end)     return false;
     // 分组过滤：实时从名单查，不依赖记录里的旧 group 值
-    if(group&&lookupGroup(r.consultant)!==group) return false;
+    if(autoG&&lookupGroup(r.consultant)!==autoG) return false;
     return true;
   });
 }
@@ -1436,6 +1670,7 @@ function loadDemo(){
   markDone('teamCard','teamStatus','✓ 3 位主管，8 位顾问');
   renderBatchList();renderCostManual();renderTeamGrid();showPreview();
   toast('演示数据加载成功（6 个月历史）');
+  scheduleSave();
   gp('dashboard');
 }
 
@@ -1480,7 +1715,7 @@ function triggerRender(page){
 // ═══════════════════════════════════════════════════════════
 function renderDash(){
   const dr=computeDR(S.tf.dash);
-  const fG=S.currentUser?.role==='supervisor'?S.currentUser.group:null;
+  const fG=visibleGroup();
   const recs=filterR(dr.start,dr.end,fG);
 
   if(!recs.length){
@@ -1499,8 +1734,9 @@ function renderDash(){
   document.getElementById('s4').textContent=data.filter(c=>c.remaining<0).length;
 
   // selects
-  const allCh=[...new Set(allR().map(r=>r.channel))].sort();
-  const allGr=[...new Set(allR().map(r=>r.group))].sort();
+  const baseForSel=visibleAllR();
+  const allCh=[...new Set(baseForSel.map(r=>r.channel))].sort();
+  const allGr=[...new Set(baseForSel.map(r=>lookupGroup(r.consultant)))].sort();
   const chSel=document.getElementById('trendCh');const curCh=chSel.value;
   chSel.innerHTML='<option value="">全渠道</option>'+allCh.map(c=>`<option value="${c}">${c}</option>`).join('');chSel.value=curCh;
   const grSel=document.getElementById('trendGr');const curGr=grSel.value;
@@ -1508,7 +1744,7 @@ function renderDash(){
 
   let tRecs=recs;
   if(chSel.value) tRecs=tRecs.filter(r=>r.channel===chSel.value);
-  if(grSel.value) tRecs=tRecs.filter(r=>r.group===grSel.value);
+  if(grSel.value) tRecs=tRecs.filter(r=>lookupGroup(r.consultant)===grSel.value);
   const trend=calcTrend(tRecs,dr.grain,dr.start,dr.end);
   document.getElementById('trendSub').textContent=`${dr.label} · ${{day:'日',week:'周',month:'月',year:'年'}[dr.grain]}粒度`;
   mkBar('trendChart',trend.map(t=>bLbl(t.k,dr.grain)),trend.map(t=>t.cost));
@@ -1796,7 +2032,7 @@ function renderAccList(){
       ${i===0?'<span style="font-size:10px;color:var(--i4)">内置</span>':`<button class="btn br bxs" onclick="delAcc(${i})">删除</button>`}
     </li>`).join('');
 }
-function delAcc(i){S.accounts.splice(i,1);renderAccList();toast('账号已删除');}
+function delAcc(i){S.accounts.splice(i,1);renderAccList();toast('账号已删除');scheduleSave();}
 function addAccount(){
   const u=document.getElementById('newUN').value.trim();
   const p=document.getElementById('newPW').value.trim();
@@ -1807,22 +2043,25 @@ function addAccount(){
   S.accounts.push({u,p,role:r,group:g});
   ['newUN','newPW','newGrp'].forEach(id=>document.getElementById(id).value='');
   renderAccList();toast('账号添加成功');
+  scheduleSave();
 }
 function renderBudgetList(){
-  const data=calcData(allR(),'','');
+  const data=calcData(filterR('',''),'', '');
   document.getElementById('budgetList').innerHTML=data.length
     ?data.map(c=>`<div class="brow"><label>${c.name} <span style="font-size:10.5px;color:var(--i4)">(${c.group})</span></label><input type="number" id="b_${c.name}" value="${S.budgets[c.name]||50000}" min="0" step="1000"></div>`).join('')
     :'<p style="color:var(--i4);font-size:12.5px">请先上传顾问数据</p>';
 }
 function applyDefBudget(){
   const def=parseFloat(document.getElementById('defBudget').value)||50000;
-  calcData(allR(),'','').forEach(c=>{S.budgets[c.name]=def;const el=document.getElementById(`b_${c.name}`);if(el)el.value=def;});
+  calcData(filterR('',''),'', '').forEach(c=>{S.budgets[c.name]=def;const el=document.getElementById(`b_${c.name}`);if(el)el.value=def;});
   toast('已批量应用');
+  scheduleSave();
 }
 function saveAdmin(){
-  calcData(allR(),'','').forEach(c=>{const el=document.getElementById(`b_${c.name}`);if(el)S.budgets[c.name]=parseFloat(el.value)||50000;});
+  calcData(filterR('',''),'', '').forEach(c=>{const el=document.getElementById(`b_${c.name}`);if(el)S.budgets[c.name]=parseFloat(el.value)||50000;});
   closeAdmin();toast('设置已保存');
   if(document.getElementById('page-dashboard').classList.contains('on')) renderDash();
+  scheduleSave();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1830,6 +2069,10 @@ function saveAdmin(){
 // ═══════════════════════════════════════════════════════════
 const PT={upload:'数据上传',dashboard:'管理仪表盘',detail:'顾问明细',group:'小组视图',team:'人员名单'};
 function gp(id){
+  if(S.currentUser?.role==='supervisor' && (id==='upload' || id==='team')){
+    toast('组长无权限访问该页面','terr');
+    id='group';
+  }
   document.querySelectorAll('.pc').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById(`page-${id}`).classList.add('on');
@@ -1839,7 +2082,7 @@ function gp(id){
   if(id==='group'){syncTF('group');setTimeout(()=>renderGroupPage(),10);}
   if(id==='detail'){
     syncTF('detail');
-    const d=calcData(allR(),'','');if(d.length)populateCsel(d);
+    const d=calcData(filterR('',''),'', '');if(d.length)populateCsel(d);
     renderDetail();
   }
   if(id==='team') renderTeamGrid();
@@ -1849,12 +2092,12 @@ function gp(id){
 //  PREVIEW
 // ═══════════════════════════════════════════════════════════
 function showPreview(){
-  const recs=allR();
+  const recs=filterR('','');
   if(!recs.length){document.getElementById('previewSection').style.display='none';return;}
   document.getElementById('previewSection').style.display='block';
   const cs=[...new Set(recs.map(r=>r.consultant))];
   const chs=[...new Set(recs.map(r=>r.channel))];
-  const gs=[...new Set(recs.map(r=>r.group))];
+  const gs=[...new Set(recs.map(r=>lookupGroup(r.consultant)))];
   const ds=recs.map(r=>r.date).filter(Boolean).sort();
   document.getElementById('previewContent').innerHTML=`
     <div class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:8px">
@@ -1895,6 +2138,24 @@ function dlCSV(type){
   const blob=new Blob(['\uFEFF'+content],{type:'text/csv;charset=utf-8;'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;a.click();
 }
+
+// ═══════════════════════════════════════════════════════════
+//  BOOTSTRAP
+// ═══════════════════════════════════════════════════════════
+(function boot(){
+  const loaded=loadState();
+  if(loaded){
+    syncTeamAccounts();
+    autoInitBudgets();
+    refreshUploadCards();
+  }else{
+    renderBatchList();
+    renderCostManual();
+    renderTeamGrid();
+    showPreview();
+  }
+  window.addEventListener('beforeunload', saveStateNow);
+})();
 </script>
 </body>
 </html>
