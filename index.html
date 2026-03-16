@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>预算消耗管理系统</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ────────────────────────────────────────────────
+   DESIGN TOKENS  —  high-end minimal light theme
+──────────────────────────────────────────────── */
+:root{
+  /* surfaces */
+  --bg:   #f5f4f0;
+  --s0:   #ffffff;
+  --s1:   #f0efeb;
+  --s2:   #e8e7e2;
+  /* borders */
+  --b0:   #e3e2dd;
+  --b1:   #cac9c3;
+  /* ink */
+  --ink:  #18181b;
+  --i2:   #52525b;
+  --i3:   #a1a1aa;
+  --i4:   #d4d4d8;
+  /* semantic */
+  --blu:  #2563eb;
+  --blu-t:rgba(37,99,235,.06);
+  --grn:  #16a34a;
+  --grn-t:rgba(22,163,74,.07);
+  --amb:  #d97706;
+  --amb-t:rgba(217,119,6,.07);
+  --red:  #dc2626;
+  --red-t:rgba(220,38,38,.07);
+  /* type */
+  --f: 'Inter','Noto Sans SC',system-ui,sans-serif;
+  --fm:'JetBrains Mono',monospace;
+  /* geometry */
+  --r: 8px;
+  --r2:12px;
+  --sh: 0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --sh2:0 4px 16px rgba(0,0,0,.06),0 1px 4px rgba(0,0,0,.04);
+}
+
+/* ── RESET ── */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:13.5px;
+  line-height:1.55;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+.mono{font-family:var(--fm)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b0);border-radius:2px}
+
+/* ────────────────────────────────────────────────
+   LOGIN SCREEN
+──────────────────────────────────────────────── */
+#ls{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);z-index:9999;
+}
+.lw{width:360px}
+.l-pre{
+  font-size:9.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--i3);margin-bottom:32px;display:flex;align-items:center;gap:10px;
+}
+.l-pre::before,.l-pre::after{content:'';flex:1;height:1px;background:var(--b0)}
+.l-h{font-size:28px;font-weight:600;letter-spacing:-.7px;margin-bottom:6px}
+.l-s{font-size:13px;color:var(--i3);margin-bottom:32px}
+.fl{display:block;font-size:9.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--i3);margin-bottom:5px}
+.fi{
+  width:100%;padding:10px 12px;background:var(--s0);border:1px solid var(--b0);
+  border-radius:var(--r);color:var(--ink);font-size:13.5px;font-family:var(--f);
+  outline:none;transition:border-color .12s,box-shadow .12s;
+}
+.fi:focus{border-color:var(--blu);box-shadow:0 0 0 3px var(--blu-t)}
+select.fi option{background:var(--s0)}
+.fg{margin-bottom:14px}
+.l-err{
+  font-size:12px;color:var(--red);margin-bottom:12px;
+  padding:8px 11px;background:var(--red-t);border-radius:6px;
+  border:1px solid rgba(220,38,38,.12);display:none;
+}
+.l-hint{text-align:center;font-size:11px;color:var(--i4);margin-top:18px}
+
+/* ────────────────────────────────────────────────
+   BUTTONS
+──────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;padding:8px 14px;
+  border-radius:var(--r);font-size:12.5px;font-family:var(--f);cursor:pointer;
+  border:1px solid transparent;transition:all .12s;font-weight:500;
+  letter-spacing:-.1px;white-space:nowrap;line-height:1;
+}
+.bp{background:var(--ink);color:#fff;border-color:var(--ink)}
+.bp:hover{background:#27272a}
+.bo{background:var(--s0);color:var(--i2);border-color:var(--b0)}
+.bo:hover{background:var(--s1);border-color:var(--b1);color:var(--ink)}
+.br{background:var(--red-t);color:var(--red);border-color:rgba(220,38,38,.15)}
+.br:hover{background:rgba(220,38,38,.11)}
+.bg{background:var(--grn-t);color:var(--grn);border-color:rgba(22,163,74,.15)}
+.bg:hover{background:rgba(22,163,74,.11)}
+.bxs{padding:4px 8px;font-size:11.5px;border-radius:5px}
+.bsm{padding:6px 10px;font-size:12px}
+.blg{padding:11px 20px;font-size:14px}
+
+/* ────────────────────────────────────────────────
+   APP SHELL
+──────────────────────────────────────────────── */
+#app{display:none}
+.layout{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sb{
+  width:196px;min-height:100vh;
+  background:var(--s0);border-right:1px solid var(--b0);
+  display:flex;flex-direction:column;
+  position:fixed;left:0;top:0;bottom:0;z-index:100;
+}
+.sb-head{padding:22px 16px 16px;border-bottom:1px solid var(--b0)}
+.sb-brand{
+  font-size:9px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--i4);margin-bottom:8px;
+}
+.sb-name{font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.3px;line-height:1.3}
+.sb-nav{padding:10px 8px;flex:1;overflow-y:auto}
+.nsec{
+  font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--i4);padding:0 8px;margin:12px 0 4px;
+}
+.ni{
+  display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;
+  cursor:pointer;color:var(--i3);font-size:12.5px;transition:all .1s;
+  margin-bottom:1px;user-select:none;letter-spacing:-.1px;
+}
+.ni:hover{background:var(--s1);color:var(--i2)}
+.ni.on{background:var(--s2);color:var(--ink);font-weight:500}
+.ni-dot{
+  width:4px;height:4px;border-radius:50%;background:var(--i4);
+  flex-shrink:0;transition:background .1s;
+}
+.ni.on .ni-dot{background:var(--blu)}
+.sb-foot{padding:10px 12px;border-top:1px solid var(--b0)}
+.ub{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 8px;border-radius:6px;
+  background:var(--s1);cursor:default;
+}
+.uav{
+  width:24px;height:24px;border-radius:5px;background:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:600;color:#fff;flex-shrink:0;
+}
+.u-name{font-size:12px;font-weight:500;letter-spacing:-.1px}
+.u-role{font-size:10.5px;color:var(--i3);margin-top:1px}
+.lo-link{text-align:center;font-size:11px;color:var(--i4);cursor:pointer;margin-top:6px;transition:color .1s}
+.lo-link:hover{color:var(--red)}
+
+/* ── MAIN ── */
+.main{margin-left:196px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{
+  height:48px;background:var(--s0);border-bottom:1px solid var(--b0);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;position:sticky;top:0;z-index:50;
+}
+.tb-title{font-size:13px;font-weight:500;color:var(--ink);letter-spacing:-.2px}
+.tb-right{display:flex;gap:5px;align-items:center}
+.pc{padding:28px 32px 60px;display:none}
+.pc.on{display:block}
+
+/* ── PAGE HEADER ── */
+.ph{margin-bottom:22px}
+.ph-eye{font-size:9.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--i4);margin-bottom:6px}
+.ph-h{font-size:22px;font-weight:600;letter-spacing:-.6px;color:var(--ink);line-height:1.2}
+.ph-s{font-size:12.5px;color:var(--i3);margin-top:4px}
+
+/* ── DIVIDER LABEL ── */
+.dlbl{
+  font-size:9.5px;font-weight:600;letter-spacing:.16em;color:var(--i4);
+  text-transform:uppercase;display:flex;align-items:center;gap:8px;
+  margin:18px 0 10px;
+}
+.dlbl::after{content:'';flex:1;height:1px;background:var(--b0)}
+.dlbl:first-child{margin-top:0}
+
+/* ────────────────────────────────────────────────
+   TIME FILTER BAR
+──────────────────────────────────────────────── */
+.tbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:var(--s0);border:1px solid var(--b0);border-radius:var(--r);
+  padding:8px 12px;margin-bottom:20px;
+}
+.tbar-lbl{font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--i4)}
+.ptabs{display:flex;background:var(--s1);border:1px solid var(--b0);border-radius:5px;padding:2px;gap:1px}
+.ptab{
+  padding:4px 10px;border-radius:4px;font-size:11.5px;cursor:pointer;
+  color:var(--i3);transition:all .1s;user-select:none;line-height:1.4;letter-spacing:-.1px;
+}
+.ptab.on{background:var(--s0);color:var(--ink);font-weight:500;box-shadow:var(--sh)}
+.tnav{display:flex;align-items:center;gap:4px}
+.tnbtn{
+  width:20px;height:20px;border-radius:4px;border:1px solid var(--b0);
+  background:transparent;color:var(--i3);cursor:pointer;font-size:11px;
+  display:flex;align-items:center;justify-content:center;transition:all .1s;
+  line-height:1;padding:0;font-family:var(--f);
+}
+.tnbtn:hover{background:var(--s1);border-color:var(--b1);color:var(--ink)}
+.tnlbl{font-size:12.5px;font-weight:500;color:var(--ink);min-width:130px;text-align:center;letter-spacing:-.1px}
+.crange{display:none;align-items:center;gap:5px}
+.crange.on{display:flex}
+.crange input{
+  padding:4px 8px;background:var(--s0);border:1px solid var(--b0);border-radius:5px;
+  color:var(--ink);font-size:11.5px;font-family:var(--f);outline:none;width:122px;
+  transition:border-color .1s;
+}
+.crange input:focus{border-color:var(--blu)}
+.tbar-cnt{margin-left:auto;font-size:11px;color:var(--i4);font-family:var(--fm)}
+
+/* ────────────────────────────────────────────────
+   STAT CARDS
+──────────────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.sc{
+  background:var(--s0);border:1px solid var(--b0);border-radius:var(--r2);
+  padding:16px 18px;position:relative;overflow:hidden;
+}
+.sc-bar{position:absolute;left:0;top:12px;bottom:12px;width:2px;border-radius:0 1px 1px 0}
+.sc-lbl{font-size:9.5px;font-weight:600;letter-spacing:.13em;color:var(--i3);text-transform:uppercase;margin-bottom:8px;padding-left:10px}
+.sc-val{font-family:var(--fm);font-size:19px;font-weight:500;letter-spacing:-.04em;padding-left:10px;color:var(--ink)}
+.sc-sub{font-size:10.5px;color:var(--i4);margin-top:4px;padding-left:10px}
+
+/* ────────────────────────────────────────────────
+   CARD
+──────────────────────────────────────────────── */
+.card{background:var(--s0);border:1px solid var(--b0);border-radius:var(--r2);padding:18px 20px}
+.card+.card,.g2+.card,.card+.g2{margin-top:10px}
+.ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:13px;gap:8px}
+.ch-l{display:flex;flex-direction:column;gap:1px}
+.ct{font-size:12.5px;font-weight:500;color:var(--ink);letter-spacing:-.15px}
+.cs{font-size:11px;color:var(--i3)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* ────────────────────────────────────────────────
+   TABLE
+──────────────────────────────────────────────── */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{
+  text-align:left;font-size:9.5px;font-weight:600;letter-spacing:.1em;
+  color:var(--i3);text-transform:uppercase;padding:7px 12px;
+  border-bottom:1px solid var(--b0);white-space:nowrap;
+}
+tbody tr{border-bottom:1px solid var(--b0);transition:background .08s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--s1)}
+tbody td{padding:9px 12px;font-size:13px;vertical-align:middle;color:var(--ink)}
+tbody tr[data-c]{cursor:pointer}
+
+/* ────────────────────────────────────────────────
+   PROGRESS
+──────────────────────────────────────────────── */
+.pb{height:3px;background:var(--b0);border-radius:2px;overflow:hidden}
+.pf{height:100%;border-radius:2px;transition:width .35s}
+.lo{background:var(--grn)}
+.mi{background:var(--amb)}
+.hi{background:var(--red)}
+
+/* ────────────────────────────────────────────────
+   TAGS
+──────────────────────────────────────────────── */
+.tag{display:inline-flex;align-items:center;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:500;letter-spacing:.02em;line-height:1.6}
+.tb{background:var(--blu-t);color:var(--blu)}
+.tg{background:var(--grn-t);color:var(--grn)}
+.tm{background:var(--amb-t);color:var(--amb)}
+.tr{background:var(--red-t);color:var(--red)}
+.tn{background:var(--s2);color:var(--i3);border:1px solid var(--b0)}
+
+/* ────────────────────────────────────────────────
+   RANK LIST
+──────────────────────────────────────────────── */
+.rl{list-style:none}
+.ri{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--b0)}
+.ri:last-child{border-bottom:none}
+.rn{font-family:var(--fm);font-size:9.5px;font-weight:600;color:var(--i4);width:14px;text-align:center}
+.rn.top{color:var(--amb)}
+.rb{flex:1;min-width:0}
+.rname{font-size:12px;font-weight:500;color:var(--ink);margin-bottom:3px}
+.rval{font-family:var(--fm);font-size:12px;color:var(--i2);font-weight:500;white-space:nowrap}
+
+/* ────────────────────────────────────────────────
+   UPLOAD CARDS
+──────────────────────────────────────────────── */
+.ug{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px}
+.uc{
+  background:var(--bg);border:1px dashed var(--b1);border-radius:var(--r);
+  padding:16px;text-align:center;transition:all .12s;cursor:pointer;position:relative;
+}
+.uc:hover{border-color:var(--blu);background:var(--blu-t);border-style:solid}
+.uc.done{border-color:var(--grn);border-style:solid;background:var(--grn-t)}
+.uc input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.uc-ico{font-size:16px;margin-bottom:6px;opacity:.7}
+.uc h3{font-size:11.5px;font-weight:500;color:var(--ink);margin-bottom:2px;letter-spacing:-.1px}
+.uc p{font-size:10.5px;color:var(--i3);line-height:1.5}
+.uc-st{font-size:10px;margin-top:6px;font-weight:500;color:var(--i4)}
+.uc.done .uc-st{color:var(--grn)}
+
+/* batch list */
+.bl{margin-top:10px}
+.bi{
+  display:flex;align-items:center;gap:7px;padding:6px 10px;
+  background:var(--bg);border:1px solid var(--b0);border-radius:5px;margin-bottom:4px;
+}
+.bi-name{flex:1;font-size:11.5px;font-weight:500;color:var(--i2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bi-rows{font-family:var(--fm);color:var(--blu);font-size:10.5px}
+.bi-date{color:var(--i4);font-size:10.5px}
+.bi-del{cursor:pointer;color:var(--i4);font-size:11px;padding:2px;transition:color .1s;flex-shrink:0}
+.bi-del:hover{color:var(--red)}
+
+/* info box */
+.ib{
+  background:var(--blu-t);border:1px solid rgba(37,99,235,.1);
+  border-radius:var(--r);padding:9px 12px;
+  font-size:11.5px;color:var(--i2);margin-bottom:12px;line-height:1.65;
+}
+
+/* cost period row */
+.cpr{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:9px 12px;background:var(--bg);border:1px solid var(--b0);
+  border-radius:var(--r);margin-bottom:6px;
+}
+.crd{display:flex;align-items:center;gap:4px}
+.crd input,.cch input{
+  padding:5px 8px;background:var(--s0);border:1px solid var(--b0);border-radius:5px;
+  color:var(--ink);font-size:12px;font-family:var(--f);outline:none;transition:border-color .1s;
+}
+.crd input:focus,.cch input:focus{border-color:var(--blu)}
+.crd input{width:110px}
+.cpc{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cch{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--i2)}
+.cch input{width:90px;font-family:var(--fm);text-align:right}
+.crd-sep{color:var(--i4);font-size:11px}
+
+/* team grid */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.tc{background:var(--bg);border:1px solid var(--b0);border-radius:var(--r);padding:12px 14px}
+.tc-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.tc-sup{font-size:12.5px;font-weight:500;color:var(--ink);letter-spacing:-.1px}
+.tc-cnt{font-size:10.5px;color:var(--i4)}
+.tc-mems{display:flex;flex-wrap:wrap;gap:4px}
+.tc-mem{font-size:10.5px;padding:2px 7px;background:var(--s0);border:1px solid var(--b0);border-radius:3px;color:var(--i2)}
+
+/* detail */
+.dh{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px}
+.dav{
+  width:36px;height:36px;border-radius:7px;background:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:600;color:#fff;flex-shrink:0;
+}
+.cc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.cc{background:var(--bg);border:1px solid var(--b0);border-radius:var(--r);padding:13px}
+.cc-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.cc-nm{font-size:12.5px;font-weight:500;letter-spacing:-.1px}
+.cc-pr{font-size:10px;color:var(--i4);margin-top:2px}
+.cc-val{font-family:var(--fm);font-size:16px;font-weight:500;letter-spacing:-.03em}
+.cc-sub{font-size:10.5px;color:var(--i3);margin:3px 0 8px}
+.plbl{display:flex;justify-content:space-between;font-size:10px;color:var(--i4);margin-top:4px}
+
+/* back button */
+.bk{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--i3);cursor:pointer;margin-bottom:16px;letter-spacing:-.1px;transition:color .1s}
+.bk:hover{color:var(--blu)}
+
+/* group tabs */
+.gtabs{display:flex;gap:0;border-bottom:1px solid var(--b0);margin-bottom:16px;overflow-x:auto}
+.gtab{
+  padding:7px 14px;font-size:12.5px;cursor:pointer;color:var(--i3);
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  user-select:none;transition:all .1s;white-space:nowrap;letter-spacing:-.1px;
+}
+.gtab:hover{color:var(--i2)}
+.gtab.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:500}
+
+/* amp */
+.amp{display:none;background:var(--bg);border:1px solid var(--b0);border-radius:var(--r);padding:14px;margin-top:10px}
+.amp.on{display:block}
+.amp-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+
+/* ────────────────────────────────────────────────
+   MODAL
+──────────────────────────────────────────────── */
+.modal{
+  position:fixed;inset:0;background:rgba(24,24,27,.15);
+  backdrop-filter:blur(3px);z-index:500;
+  display:none;align-items:center;justify-content:center;
+}
+.modal.on{display:flex}
+.mb{
+  background:var(--s0);border:1px solid var(--b0);border-radius:var(--r2);
+  padding:24px;width:540px;max-height:82vh;overflow-y:auto;box-shadow:var(--sh2);
+}
+.mb-title{font-size:15px;font-weight:600;letter-spacing:-.3px;margin-bottom:3px}
+.mb-sub{font-size:12px;color:var(--i3);margin-bottom:16px}
+.mtabs{display:flex;border-bottom:1px solid var(--b0);margin-bottom:16px}
+.mtab{
+  padding:6px 12px;font-size:12.5px;cursor:pointer;color:var(--i3);
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  user-select:none;transition:all .1s;letter-spacing:-.1px;
+}
+.mtab.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:500}
+.mtp{display:none}.mtp.on{display:block}
+.acc-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--b0);border-radius:5px;margin-bottom:5px}
+.acc-name{flex:1;font-size:12.5px;font-weight:500;letter-spacing:-.1px}
+.add-form{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end}
+.add-form input,.add-form select{
+  padding:7px 10px;background:var(--bg);border:1px solid var(--b0);border-radius:5px;
+  color:var(--ink);font-size:12.5px;font-family:var(--f);outline:none;transition:border-color .1s;
+}
+.add-form input:focus,.add-form select:focus{border-color:var(--blu);background:var(--s0)}
+.fml{font-size:9.5px;font-weight:600;color:var(--i4);letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:4px}
+.brow{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--b0);border-radius:5px;margin-bottom:5px}
+.brow label{flex:1;font-size:12.5px;font-weight:500;letter-spacing:-.1px}
+.brow input{width:100px;padding:5px 8px;background:var(--s0);border:1px solid var(--b0);border-radius:4px;color:var(--ink);font-size:12.5px;font-family:var(--fm);text-align:right;outline:none;transition:border-color .1s}
+.brow input:focus{border-color:var(--blu)}
+.mf{display:flex;gap:6px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--b0)}
+
+/* ────────────────────────────────────────────────
+   EMPTY STATE
+──────────────────────────────────────────────── */
+.empty{text-align:center;padding:40px 20px;color:var(--i4)}
+.empty-ic{font-size:20px;margin-bottom:10px;opacity:.4}
+.empty p{font-size:12.5px}
+
+/* ────────────────────────────────────────────────
+   TOAST
+──────────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:18px;right:18px;background:var(--ink);color:#fff;
+  border-radius:var(--r);padding:9px 14px;font-size:12px;
+  display:flex;align-items:center;gap:8px;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:9998;
+  transform:translateY(44px);opacity:0;transition:all .2s;letter-spacing:-.1px;
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.tok .toast-dot{background:#4ade80}
+.terr .toast-dot{background:#f87171}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+  LOGIN
+══════════════════════════════════════════ -->
+<div id="ls">
+  <div class="lw">
+    <div class="l-pre">Budget Management</div>
+    <div class="l-h">预算消耗管理</div>
+    <p class="l-s">请登录账号继续访问</p>
+    <div class="fg"><label class="fl">用户名</label><input class="fi" type="text" id="lun" placeholder="用户名" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="fg"><label class="fl">密码</label><input class="fi" type="password" id="lpw" placeholder="密码" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="l-err" id="lerr">用户名或密码有误，请重试</div>
+    <button class="btn bp blg" style="width:100%;justify-content:center" onclick="doLogin()">登录</button>
+    <p class="l-hint">初始管理员账号：admin / 123456</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+  APP
+══════════════════════════════════════════ -->
+<div id="app">
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="sb-head">
+    <div class="sb-brand">Budget System</div>
+    <div class="sb-name">预算消耗<br>管理系统</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nsec">核心</div>
+    <div class="ni" onclick="gp('dashboard')" id="nav-dashboard"><div class="ni-dot"></div>管理仪表盘</div>
+    <div class="ni" onclick="gp('detail')"    id="nav-detail"   ><div class="ni-dot"></div>顾问明细</div>
+    <div class="ni" onclick="gp('group')"     id="nav-group"    ><div class="ni-dot"></div>小组视图</div>
+    <div class="nsec">数据</div>
+    <div class="ni" onclick="gp('upload')"    id="nav-upload"   ><div class="ni-dot"></div>数据上传</div>
+    <div class="ni" onclick="gp('team')"      id="nav-team"     ><div class="ni-dot"></div>人员名单</div>
+    <div class="nsec" id="adm-sec" style="display:none">管理</div>
+    <div class="ni"   id="nav-admin" style="display:none" onclick="openAdmin()"><div class="ni-dot"></div>系统设置</div>
+  </nav>
+  <div class="sb-foot">
+    <div class="ub">
+      <div class="uav" id="uav">?</div>
+      <div style="flex:1;min-width:0">
+        <div class="u-name" id="uname">—</div>
+        <div class="u-role" id="urole">—</div>
+      </div>
+    </div>
+    <div class="lo-link" onclick="doLogout()">退出登录</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+<header class="topbar">
+  <span class="tb-title" id="pageTitle">—</span>
+  <div class="tb-right">
+    <button class="btn bo bxs" onclick="dlCSV('rules')">规则模板</button>
+    <button class="btn bo bxs" onclick="dlCSV('data')">数据模板</button>
+    <button class="btn bo bxs" onclick="dlCSV('cost')">消耗模板</button>
+    <button class="btn bo bxs" onclick="dlCSV('team')">名单模板</button>
+  </div>
+</header>
+
+<!-- ── Upload ── -->
+<div class="pc" id="page-upload">
+  <div class="ph">
+    <div class="ph-eye">Data</div>
+    <div class="ph-h">数据上传</div>
+    <div class="ph-s">加微表：顾问×渠道为行，日期为列；消耗表：渠道为行，日期为列；后上传数据自动覆盖重复项</div>
+  </div>
+
+  <!-- Rules -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="ch"><div class="ch-l"><span class="ct">渠道规则表</span><span class="cs">每次上传覆盖旧规则</span></div></div>
+    <div class="ug" style="grid-template-columns:minmax(0,320px)">
+      <div class="uc" id="rulesCard">
+        <input type="file" accept=".csv" onchange="loadRulesCSV(event)">
+        <div class="uc-ico">📋</div><h3>渠道规则表</h3>
+        <p>渠道名称, 单价规则<br>数字 = 固定单价；文字 = 动态</p>
+        <div class="uc-st" id="rulesStatus">点击上传 rules.csv</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data batches -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="ch">
+      <div class="ch-l"><span class="ct">每日加微数据</span><span class="cs">宽表格式：第1列顾问，第2列渠道，第3列起为日期；后上传覆盖同顾问＋渠道＋日期旧数据</span></div>
+      <button class="btn br bxs" onclick="clearData()">清空全部</button>
+    </div>
+    <div class="ib">
+      <strong>第1列：顾问姓名 &nbsp;·&nbsp; 第2列：渠道名称 &nbsp;·&nbsp; 第3列起：日期（每列一天）</strong><br>
+      每个单元格填写该顾问当天在该渠道的加微数。后上传数据与已有 <em>顾问＋渠道＋日期</em> 相同时自动覆盖。
+    </div>
+    <div class="ug" style="grid-template-columns:minmax(0,320px)">
+      <div class="uc" id="dataCard">
+        <input type="file" accept=".csv" id="dataFile" onchange="loadDataCSV(event)">
+        <div class="uc-ico">📈</div><h3>加微数据（可多次上传）</h3>
+        <p><strong>第1列：顾问姓名</strong><br><strong>第2列：渠道名称</strong><br><strong>第3列起：日期</strong>（格式 2024-01-15）<br>单元格值为当日加微数</p>
+        <div class="uc-st" id="dataStatus">点击上传 data.csv</div>
+      </div>
+    </div>
+    <div class="bl" id="batchList"></div>
+  </div>
+
+  <!-- Cost -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="ch"><div class="ch-l"><span class="ct">渠道消耗金额</span><span class="cs">宽表格式：第1列渠道，第2列起为日期；后上传覆盖同渠道＋日期旧数据</span></div></div>
+    <div class="ib">
+      动态单价 = <strong>渠道消耗金额 ÷ 该渠道所有顾问加微之和</strong>（全公司口径，按所选时间范围自动汇总）<br>
+      <strong>第1列：渠道名称 &nbsp;·&nbsp; 第2列起：日期（每列一天）</strong><br>
+      每个单元格填写该渠道当天的消耗金额。后上传数据与已有 <em>渠道＋日期</em> 相同时自动覆盖。
+    </div>
+    <div class="ug" style="grid-template-columns:minmax(0,320px);margin-bottom:10px">
+      <div class="uc" id="costCard">
+        <input type="file" accept=".csv" onchange="loadCostCSV(event)">
+        <div class="uc-ico">💰</div><h3>渠道消耗表（CSV）</h3>
+        <p><strong>第1列：渠道名称</strong><br><strong>第2列起：日期</strong>（格式 2024-01-15）<br>单元格值为当日消耗金额</p>
+        <div class="uc-st" id="costStatus">点击上传 cost.csv</div>
+      </div>
+    </div>
+    <div id="costManual" style="display:none">
+      <div class="dlbl">手动录入</div>
+      <div id="cpList"></div>
+      <button class="btn bo bxs" onclick="addCostPeriod()">＋ 添加周期</button>
+    </div>
+  </div>
+
+  <!-- Team -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="ch"><div class="ch-l"><span class="ct">主管 &amp; 顾问名单</span><span class="cs">上传后自动创建组长账号（默认密码 123）</span></div></div>
+    <div class="ug" style="grid-template-columns:minmax(0,320px)">
+      <div class="uc" id="teamCard">
+        <input type="file" accept=".csv" onchange="loadTeamCSV(event)">
+        <div class="uc-ico">👥</div><h3>人员名单（CSV）</h3>
+        <p>主管姓名, 顾问姓名</p>
+        <div class="uc-st" id="teamStatus">点击上传 team.csv</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="ch"><div class="ch-l"><span class="ct">演示数据</span><span class="cs">含 6 个月历史、3 位主管、8 位顾问</span></div></div>
+    <p style="font-size:12.5px;color:var(--i3);margin-bottom:12px">一键加载完整演示数据，体验多批次上传、时间筛选、人员名单全部功能。</p>
+    <button class="btn bg" onclick="loadDemo()">加载演示数据</button>
+  </div>
+
+  <!-- Preview -->
+  <div id="previewSection" style="display:none" class="card">
+    <div class="ch"><div class="ct">数据概览</div></div>
+    <div id="previewContent"></div>
+  </div>
+</div>
+
+<!-- ── Team ── -->
+<div class="pc" id="page-team">
+  <div class="ph"><div class="ph-eye">People</div><div class="ph-h">人员名单</div><div class="ph-s" id="teamCountLbl">管理主管与顾问归属关系</div></div>
+  <div class="card" style="margin-bottom:10px">
+    <div class="ch">
+      <span class="ct">手动添加</span>
+      <button class="btn bo bsm" onclick="toggleAMP()">＋ 添加</button>
+    </div>
+    <div class="amp" id="addMemberPanel">
+      <div class="amp-row">
+        <div><span class="fml">主管姓名</span><input class="fi" type="text" id="newSup" placeholder="例：王主管"></div>
+        <div><span class="fml">顾问姓名</span><input class="fi" type="text" id="newMem" placeholder="例：张伟"></div>
+        <div style="padding-top:16px"><button class="btn bp bsm" onclick="addMember()">添加</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct">当前名单</div></div>
+    <div class="team-grid" id="teamGrid">
+      <div class="empty"><div class="empty-ic">◻</div><p>暂无名单，请上传或手动添加</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Dashboard ── -->
+<div class="pc" id="page-dashboard">
+  <div class="ph"><div class="ph-eye">Overview</div><div class="ph-h">管理仪表盘</div></div>
+  <!-- Time filter -->
+  <div class="tbar">
+    <span class="tbar-lbl">周期</span>
+    <div class="ptabs">
+      <div class="ptab on"  onclick="setP('dash','week',this)">周</div>
+      <div class="ptab"     onclick="setP('dash','month',this)">月</div>
+      <div class="ptab"     onclick="setP('dash','year',this)">年</div>
+      <div class="ptab"     onclick="setP('dash','custom',this)">自定义</div>
+      <div class="ptab"     onclick="setP('dash','all',this)">全部</div>
+    </div>
+    <div class="tnav" id="dash-tnav">
+      <button class="tnbtn" onclick="stepP('dash',-1)">‹</button>
+      <span class="tnlbl" id="dash-lbl">—</span>
+      <button class="tnbtn" onclick="stepP('dash',1)">›</button>
+    </div>
+    <div class="crange" id="dash-crange">
+      <input type="date" id="dash-cs" onchange="applyCustom('dash')">
+      <span class="crd-sep">—</span>
+      <input type="date" id="dash-ce" onchange="applyCustom('dash')">
+    </div>
+    <span class="tbar-cnt" id="dash-cnt"></span>
+  </div>
+
+  <div class="stats">
+    <div class="sc"><div class="sc-bar" style="background:var(--blu)"></div><div class="sc-lbl">期间消耗</div><div class="sc-val" id="s1">—</div><div class="sc-sub" id="s1s">—</div></div>
+    <div class="sc"><div class="sc-bar" style="background:var(--grn)"></div><div class="sc-lbl">活跃顾问</div><div class="sc-val" id="s2">—</div></div>
+    <div class="sc"><div class="sc-bar" style="background:var(--amb)"></div><div class="sc-lbl">期间加微</div><div class="sc-val" id="s3">—</div></div>
+    <div class="sc"><div class="sc-bar" style="background:var(--red)"></div><div class="sc-lbl">超预算顾问</div><div class="sc-val" id="s4">—</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <div class="ch">
+      <div class="ch-l"><span class="ct">消耗趋势</span><span class="cs" id="trendSub">—</span></div>
+      <div style="display:flex;gap:5px">
+        <select id="trendCh" onchange="renderDash()" style="padding:4px 8px;background:var(--bg);border:1px solid var(--b0);border-radius:5px;color:var(--ink);font-size:11.5px;font-family:var(--f);outline:none"><option value="">全渠道</option></select>
+        <select id="trendGr" onchange="renderDash()" style="padding:4px 8px;background:var(--bg);border:1px solid var(--b0);border-radius:5px;color:var(--ink);font-size:11.5px;font-family:var(--f);outline:none"><option value="">全部组</option></select>
+      </div>
+    </div>
+    <div style="position:relative;height:165px"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <div class="g2" style="margin-bottom:10px">
+    <div class="card">
+      <div class="ch"><div class="ch-l"><span class="ct">渠道消耗排行</span><span class="cs">当前周期</span></div></div>
+      <ul class="rl" id="rankList"><li style="color:var(--i4);font-size:12px;padding:18px;text-align:center">暂无数据</li></ul>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">各组消耗分布</span></div>
+      <div style="position:relative;height:180px"><canvas id="groupChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ch-l"><span class="ct">顾问消耗汇总</span><span class="cs">点击行查看渠道明细</span></div>
+      <input type="text" id="searchInput" placeholder="搜索顾问…" oninput="filterTable()"
+        style="padding:5px 9px;background:var(--bg);border:1px solid var(--b0);border-radius:5px;color:var(--ink);font-size:12px;font-family:var(--f);outline:none;width:140px;transition:border-color .1s"
+        onfocus="this.style.borderColor='var(--blu)'" onblur="this.style.borderColor='var(--b0)'">
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>顾问</th><th>所属组</th><th>加微数</th><th>消耗金额</th><th>初始预算</th><th>剩余预算</th><th>使用率</th><th>状态</th></tr></thead>
+        <tbody id="mainTBody"><tr><td colspan="8" style="text-align:center;padding:32px;color:var(--i4)">请先上传数据或加载演示数据</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Detail ── -->
+<div class="pc" id="page-detail">
+  <span class="bk" onclick="gp('dashboard')">← 返回</span>
+  <div class="ph"><div class="ph-eye">Consultant</div><div class="ph-h">顾问明细</div></div>
+  <div class="tbar" style="margin-bottom:16px">
+    <span class="tbar-lbl">周期</span>
+    <div class="ptabs">
+      <div class="ptab"    onclick="setP('detail','week',this)">周</div>
+      <div class="ptab"    onclick="setP('detail','month',this)">月</div>
+      <div class="ptab"    onclick="setP('detail','year',this)">年</div>
+      <div class="ptab"    onclick="setP('detail','custom',this)">自定义</div>
+      <div class="ptab on" onclick="setP('detail','all',this)">全部</div>
+    </div>
+    <div class="tnav" id="detail-tnav">
+      <button class="tnbtn" onclick="stepP('detail',-1)">‹</button>
+      <span class="tnlbl" id="detail-lbl">—</span>
+      <button class="tnbtn" onclick="stepP('detail',1)">›</button>
+    </div>
+    <div class="crange" id="detail-crange">
+      <input type="date" id="detail-cs" onchange="applyCustom('detail')">
+      <span class="crd-sep">—</span>
+      <input type="date" id="detail-ce" onchange="applyCustom('detail')">
+    </div>
+  </div>
+  <div style="margin-bottom:16px">
+    <span class="fml">选择顾问</span>
+    <select id="cSel" onchange="renderDetail()"
+      style="padding:7px 10px;background:var(--bg);border:1px solid var(--b0);border-radius:var(--r);color:var(--ink);font-size:13px;font-family:var(--f);outline:none;width:220px;transition:border-color .1s"
+      onfocus="this.style.borderColor='var(--blu)'" onblur="this.style.borderColor='var(--b0)'">
+      <option value="">— 请选择顾问 —</option>
+    </select>
+  </div>
+  <div id="detailContent"><div class="empty"><div class="empty-ic">◎</div><p>请选择一位顾问</p></div></div>
+</div>
+
+<!-- ── Group ── -->
+<div class="pc" id="page-group">
+  <div class="ph"><div class="ph-eye">Team</div><div class="ph-h">小组视图</div></div>
+  <div class="tbar" style="margin-bottom:16px">
+    <span class="tbar-lbl">周期</span>
+    <div class="ptabs">
+      <div class="ptab"    onclick="setP('group','week',this)">周</div>
+      <div class="ptab"    onclick="setP('group','month',this)">月</div>
+      <div class="ptab"    onclick="setP('group','year',this)">年</div>
+      <div class="ptab"    onclick="setP('group','custom',this)">自定义</div>
+      <div class="ptab on" onclick="setP('group','all',this)">全部</div>
+    </div>
+    <div class="tnav" id="group-tnav">
+      <button class="tnbtn" onclick="stepP('group',-1)">‹</button>
+      <span class="tnlbl" id="group-lbl">—</span>
+      <button class="tnbtn" onclick="stepP('group',1)">›</button>
+    </div>
+    <div class="crange" id="group-crange">
+      <input type="date" id="group-cs" onchange="applyCustom('group')">
+      <span class="crd-sep">—</span>
+      <input type="date" id="group-ce" onchange="applyCustom('group')">
+    </div>
+  </div>
+  <div id="groupContent"></div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- ════ ADMIN MODAL ════ -->
+<div class="modal" id="adminModal">
+  <div class="mb">
+    <div class="mb-title">系统设置</div>
+    <p class="mb-sub">管理登录账号与顾问预算配置</p>
+    <div class="mtabs">
+      <div class="mtab on" onclick="mTab(0)">账号管理</div>
+      <div class="mtab"    onclick="mTab(1)">预算配置</div>
+    </div>
+    <div class="mtp on" id="mtp0">
+      <div class="dlbl">现有账号</div>
+      <ul id="accList" style="list-style:none;margin-bottom:12px"></ul>
+      <div class="dlbl" style="margin-top:14px">新增账号</div>
+      <div class="add-form">
+        <div><span class="fml">用户名</span><input type="text" id="newUN" placeholder="用户名"></div>
+        <div><span class="fml">密码</span><input type="password" id="newPW" placeholder="密码"></div>
+        <div><span class="fml">所属组</span><input type="text" id="newGrp" placeholder="组名（组长必填）"></div>
+        <div><span class="fml">权限</span><select id="newRole"><option value="admin">管理员</option><option value="supervisor" selected>组长</option></select></div>
+      </div>
+      <button class="btn bp bsm" style="margin-top:9px" onclick="addAccount()">添加账号</button>
+    </div>
+    <div class="mtp" id="mtp1">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px">
+        <span style="font-size:12.5px;color:var(--i2)">批量设置默认预算（元）</span>
+        <input type="number" id="defBudget" value="50000"
+          style="width:95px;padding:5px 9px;background:var(--bg);border:1px solid var(--b0);border-radius:5px;color:var(--ink);font-size:12.5px;font-family:var(--fm);text-align:right;outline:none">
+        <button class="btn bo bsm" onclick="applyDefBudget()">应用</button>
+      </div>
+      <div id="budgetList"><p style="color:var(--i4);font-size:12.5px">请先上传顾问数据</p></div>
+    </div>
+    <div class="mf">
+      <button class="btn bo" onclick="closeAdmin()">关闭</button>
+      <button class="btn bp" onclick="saveAdmin()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="tmsg"></span></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+const S = {
+  accounts:[
+    {u:'admin',  p:'123456', role:'admin',     group:''},
+    {u:'王主管', p:'123',    role:'supervisor', group:'王主管组'},
+    {u:'李主管', p:'123',    role:'supervisor', group:'李主管组'},
+    {u:'张主管', p:'123',    role:'supervisor', group:'张主管组'},
+  ],
+  currentUser: null,
+  rules:       [],   // [{channel, priceRule:'fixed'|'dynamic', fixedPrice}]
+  batches:     [],   // [{id, name, uploadTime, records:[{date,consultant,group,channel,addCount}]}]
+  costPeriods: [],   // [{channel, amount, start, end}]
+  budgets:     {},   // {consultantName: amount}
+  team:        {},   // {supervisorName: [memberName,...]}
+  charts:      {},
+  tf:{
+    dash:  {period:'all', offset:0, cs:'', ce:''},
+    detail:{period:'all', offset:0, cs:'', ce:''},
+    group: {period:'all', offset:0, cs:'', ce:''},
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════════════════
+const fmt  = n => '¥'+Number(n).toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtN = n => Number(n).toLocaleString('zh-CN');
+const pCls = p => p>=90?'hi':p>=60?'mi':'lo';
+const fDate= d => d.toISOString().slice(0,10);
+const allR = () => S.batches.flatMap(b=>b.records);
+let _tt;
+function toast(msg,t='tok'){
+  document.getElementById('tmsg').textContent=msg;
+  const el=document.getElementById('toast');el.className=`toast ${t} show`;
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2700);
+}
+function readFile(f,cb){const r=new FileReader();r.onload=e=>cb(e.target.result);r.readAsText(f,'UTF-8');}
+function parseCSV(text){
+  const lines=text.trim().split('\n').filter(l=>l.trim());
+  if(!lines.length) return [];
+  const hdr=lines[0].split(',').map(h=>h.trim().replace(/^\uFEFF/,''));
+  return lines.slice(1).map(l=>{
+    const v=l.split(',').map(x=>x.trim());
+    const o={};hdr.forEach((h,i)=>{o[h]=v[i]||'';});return o;
+  });
+}
+function markDone(cid,sid,msg){
+  document.getElementById(cid).classList.add('done');
+  document.getElementById(sid).textContent=msg;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════════════
+function doLogin(){
+  const u=document.getElementById('lun').value.trim();
+  const p=document.getElementById('lpw').value;
+  const acc=S.accounts.find(a=>a.u===u&&a.p===p);
+  if(!acc){const e=document.getElementById('lerr');e.style.display='block';setTimeout(()=>e.style.display='none',3000);return;}
+  S.currentUser=acc;
+  document.getElementById('ls').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('uav').textContent=u.slice(0,1);
+  document.getElementById('uname').textContent=u;
+  document.getElementById('urole').textContent=acc.role==='admin'?'管理员':`组长 · ${acc.group}`;
+  if(acc.role==='admin'){
+    document.getElementById('adm-sec').style.display='';
+    document.getElementById('nav-admin').style.display='flex';
+  }
+  gp(acc.role==='supervisor'?'group':'upload');
+}
+function doLogout(){
+  S.currentUser=null;
+  document.getElementById('ls').style.display='flex';
+  document.getElementById('app').style.display='none';
+  ['lun','lpw'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('adm-sec').style.display='none';
+  document.getElementById('nav-admin').style.display='none';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CSV LOADERS
+// ═══════════════════════════════════════════════════════════
+function loadRulesCSV(e){
+  readFile(e.target.files[0],text=>{
+    S.rules=parseCSV(text).map(r=>{
+      const rv=(r['单价规则']||'').trim();
+      const isF=/^\d+(\.\d+)?$/.test(rv);
+      return{channel:r['渠道名称']||'',priceRule:isF?'fixed':'dynamic',fixedPrice:isF?parseFloat(rv):null};
+    }).filter(r=>r.channel);
+    markDone('rulesCard','rulesStatus',`✓ ${S.rules.length} 条规则`);
+    renderCostManual();toast('渠道规则表加载成功');showPreview();
+  });
+}
+
+function loadDataCSV(e){
+  const f=e.target.files[0];if(!f) return;
+  readFile(f,text=>{
+    // 兼容各种换行符和 BOM
+    const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n').filter(l=>l.trim());
+    if(lines.length<2){toast('文件为空或格式有误','terr');return;}
+
+    // 宽表格式：第1列=顾问姓名，第2列=渠道名称，第3列起=日期
+    const hdr=lines[0].split(',').map(h=>h.trim().replace(/^\uFEFF/,'').replace(/"/g,''));
+    const dateCols=hdr.slice(2).map(d=>d.trim());
+
+    if(!dateCols.length){
+      toast('未找到日期列，请确认第3列起为日期（如 2024-01-15）','terr');return;
+    }
+    // 验证日期格式
+    const validDates=dateCols.filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d));
+    if(!validDates.length){
+      toast('日期格式有误，请使用 YYYY-MM-DD 格式（如 2024-01-15）','terr');return;
+    }
+
+    const recs=[];
+    lines.slice(1).forEach(line=>{
+      const vals=line.split(',').map(v=>v.trim().replace(/"/g,''));
+      const consultant=vals[0]||'';
+      const channel=vals[1]||'';
+      if(!consultant||!channel) return;
+      const group=lookupGroup(consultant);
+      dateCols.forEach((date,i)=>{
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) return; // 跳过非日期列
+        const raw=(vals[i+2]||'').trim();
+        if(raw===''||raw==='-') return; // 空值跳过
+        const addCount=parseFloat(raw);
+        if(!isNaN(addCount)&&addCount>0){
+          recs.push({date,consultant,group,channel,addCount});
+        }
+      });
+    });
+
+    if(!recs.length){
+      toast('未解析到有效数据。请检查：第1列顾问姓名、第2列渠道名称、第3列起为日期、值为加微数','terr');
+      return;
+    }
+
+    // 覆盖去重：后上传数据覆盖同(顾问+渠道+日期)旧记录
+    const newKeys=new Set(recs.map(r=>`${r.date}|${r.consultant}|${r.channel}`));
+    S.batches.forEach(b=>{
+      b.records=b.records.filter(r=>!newKeys.has(`${r.date}|${r.consultant}|${r.channel}`));
+    });
+    S.batches=S.batches.filter(b=>b.records.length>0);
+
+    S.batches.push({id:Date.now(),name:f.name,uploadTime:new Date().toLocaleString('zh-CN'),records:recs});
+    autoInitBudgets();
+    renderBatchList();
+    markDone('dataCard','dataStatus',`✓ 共 ${fmtN(allR().length)} 条（${S.batches.length} 批）`);
+    toast(`已载入 ${recs.length} 条加微记录`);
+    document.getElementById('dataFile').value='';
+    showPreview();
+    // 上传后跳到仪表盘，自动切换到「全部」时间范围确保数据可见
+    switchAllPagesTo('all');
+    gp('dashboard');
+  });
+}
+
+// 实时查询顾问所属组（每次计算时调用，不依赖记录里存的旧值）
+// 优先级：① S.team 名单（最权威）② 历史记录 ③ 默认「未分组」
+function lookupGroup(consultant){
+  for(const [sup,members] of Object.entries(S.team)){
+    if(members.includes(consultant)) return `${sup}组`;
+  }
+  for(const b of S.batches){
+    const found=b.records.find(r=>r.consultant===consultant&&r.group&&r.group!=='未分组');
+    if(found) return found.group;
+  }
+  return '未分组';
+}
+
+// 将所有页面时间筛选切换到指定 period
+function switchAllPagesTo(period){
+  ['dash','detail','group'].forEach(pg=>{
+    S.tf[pg].period=period;
+    S.tf[pg].offset=0;
+    const map={dash:'page-dashboard',detail:'page-detail',group:'page-group'};
+    const el=document.getElementById(map[pg]);
+    if(el) el.querySelectorAll('.ptab').forEach(t=>t.classList.toggle('on',t.textContent.trim()==='全部'));
+  });
+}
+
+function loadCostCSV(e){
+  readFile(e.target.files[0],text=>{
+    // 兼容各种换行符和 BOM
+    const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n').filter(l=>l.trim());
+    if(lines.length<2){toast('文件为空或格式有误','terr');return;}
+
+    // 宽表格式：第1列=渠道名称，第2列起=日期
+    const hdr=lines[0].split(',').map(h=>h.trim().replace(/^\uFEFF/,'').replace(/"/g,''));
+    const dateCols=hdr.slice(1).map(d=>d.trim());
+
+    if(!dateCols.length){
+      toast('未找到日期列，请确认第2列起为日期（如 2024-01-15）','terr');return;
+    }
+    const validDates=dateCols.filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d));
+    if(!validDates.length){
+      toast('日期格式有误，请使用 YYYY-MM-DD 格式（如 2024-01-15）','terr');return;
+    }
+
+    const newEntries=[];
+    lines.slice(1).forEach(line=>{
+      const vals=line.split(',').map(v=>v.trim().replace(/"/g,''));
+      const channel=vals[0]||'';
+      if(!channel) return;
+      dateCols.forEach((date,i)=>{
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+        const raw=(vals[i+1]||'').trim();
+        if(raw===''||raw==='-') return;
+        const amt=parseFloat(raw);
+        if(!isNaN(amt)&&amt>0) newEntries.push({date,channel,amount:amt});
+      });
+    });
+
+    if(!newEntries.length){
+      toast('未解析到消耗数据。请检查：第1列渠道名称、第2列起为日期、值为消耗金额','terr');
+      return;
+    }
+
+    // 覆盖去重：后上传数据覆盖同(渠道+日期)旧记录
+    const newKeys=new Set(newEntries.map(e=>`${e.date}|${e.channel}`));
+    const before=S.costPeriods.length;
+    S.costPeriods=S.costPeriods.filter(p=>{
+      if(!p.start||!p.end) return true;
+      if(p.start===p.end) return !newKeys.has(`${p.start}|${p.channel}`);
+      return true;
+    });
+    const overwritten=before-S.costPeriods.length;
+    newEntries.forEach(e=>{
+      S.costPeriods.push({channel:e.channel,amount:e.amount,start:e.date,end:e.date});
+    });
+
+    const n=newEntries.length;
+    markDone('costCard','costStatus',`✓ ${n} 条消耗记录${overwritten>0?' (已覆盖'+overwritten+'条)':''}`);
+    toast(`渠道消耗载入 ${n} 条${overwritten>0?'，覆盖旧数据 '+overwritten+' 条':''}`);
+    // 如果已在仪表盘，重新渲染
+    if(document.getElementById('page-dashboard').classList.contains('on')) renderDash();
+  });
+}
+
+
+// ── 上传主管 & 顾问名单 ──
+function loadTeamCSV(e){
+  readFile(e.target.files[0],text=>{
+    const rows=parseCSV(text);
+    rows.forEach(r=>{
+      const sup=(r['主管姓名']||r['supervisor']||'').trim();
+      const mem=(r['顾问姓名']||r['member']||'').trim();
+      if(sup&&mem){
+        if(!S.team[sup]) S.team[sup]=[];
+        if(!S.team[sup].includes(mem)) S.team[sup].push(mem);
+      }
+    });
+    syncTeamAccounts();
+    // 名单更新后刷新仪表盘，分组立即生效（无需重新上传加微数据）
+    markDone('teamCard','teamStatus',`✓ ${Object.keys(S.team).length} 位主管，${Object.values(S.team).flat().length} 位顾问`);
+    renderTeamGrid();
+    toast(`名单加载成功：${Object.keys(S.team).length} 位主管，组员分组已更新`);
+    // 如果已有加微数据，立即刷新仪表盘让分组生效
+    if(allR().length){
+      switchAllPagesTo('all');
+      if(document.getElementById('page-dashboard').classList.contains('on')) renderDash();
+      else gp('dashboard');
+    }
+  });
+}
+function syncTeamAccounts(){
+  Object.keys(S.team).forEach(sup=>{
+    const grp=`${sup}组`;
+    const ex=S.accounts.find(a=>a.u===sup);
+    if(!ex) S.accounts.push({u:sup,p:'123',role:'supervisor',group:grp});
+    else{ex.group=grp;ex.role='supervisor';}
+  });
+}
+
+function autoInitBudgets(){
+  [...new Set(allR().map(r=>r.consultant))].forEach(c=>{if(!S.budgets[c]) S.budgets[c]=50000;});
+}
+function clearData(){
+  if(!confirm('确认清空所有加微数据？')) return;
+  S.batches=[];renderBatchList();
+  document.getElementById('dataCard').classList.remove('done');
+  document.getElementById('dataStatus').textContent='点击上传 data.csv';
+  showPreview();toast('数据已清空');
+}
+function removeBatch(id){
+  S.batches=S.batches.filter(b=>b.id!==id);renderBatchList();
+  const t=allR().length;
+  if(!S.batches.length){document.getElementById('dataCard').classList.remove('done');document.getElementById('dataStatus').textContent='点击上传 data.csv';}
+  else markDone('dataCard','dataStatus',`✓ 共 ${fmtN(t)} 条（${S.batches.length} 批）`);
+  showPreview();toast('批次已删除');
+}
+function renderBatchList(){
+  document.getElementById('batchList').innerHTML=S.batches.map(b=>`
+    <div class="bi">
+      <span class="bi-name">${b.name}</span>
+      <span class="bi-rows">${b.records.length}</span>
+      <span class="bi-date">${b.uploadTime}</span>
+      <span class="bi-del" onclick="removeBatch(${b.id})" title="删除此批次">✕</span>
+    </div>`).join('');
+}
+
+// Team UI
+function renderTeamGrid(){
+  const keys=Object.keys(S.team);
+  document.getElementById('teamCountLbl').textContent=
+    keys.length?`${keys.length} 位主管 · ${Object.values(S.team).flat().length} 位顾问`:'管理主管与顾问归属关系';
+  const el=document.getElementById('teamGrid');
+  if(!keys.length){el.innerHTML='<div class="empty"><div class="empty-ic">◻</div><p>暂无名单</p></div>';return;}
+  el.innerHTML=keys.map(sup=>`
+    <div class="tc">
+      <div class="tc-hd">
+        <span class="tc-sup">${sup}</span>
+        <span class="tc-cnt">${S.team[sup].length} 人
+          <span onclick="removeSupTeam('${sup}')" style="cursor:pointer;color:var(--i4);margin-left:6px;font-size:9px;border:1px solid var(--b0);border-radius:3px;padding:1px 5px">移除</span>
+        </span>
+      </div>
+      <div class="tc-mems">${S.team[sup].map(m=>`<span class="tc-mem">${m}</span>`).join('')}</div>
+    </div>`).join('');
+}
+function removeSupTeam(sup){
+  delete S.team[sup];
+  S.accounts=S.accounts.filter(a=>!(a.u===sup&&a.role==='supervisor'));
+  renderTeamGrid();toast(`已移除 ${sup}`);
+}
+function toggleAMP(){document.getElementById('addMemberPanel').classList.toggle('on');}
+function addMember(){
+  const sup=document.getElementById('newSup').value.trim();
+  const mem=document.getElementById('newMem').value.trim();
+  if(!sup||!mem){toast('请填写主管和顾问姓名','terr');return;}
+  if(!S.team[sup]) S.team[sup]=[];
+  if(!S.team[sup].includes(mem)) S.team[sup].push(mem);
+  syncTeamAccounts();
+  ['newSup','newMem'].forEach(id=>document.getElementById(id).value='');
+  renderTeamGrid();toast('已添加');
+}
+
+// Cost manual
+let cpCtr=0;
+function renderCostManual(){
+  document.getElementById('costManual').style.display=
+    S.rules.some(r=>r.priceRule==='dynamic')?'block':'none';
+}
+function addCostPeriod(){
+  const dyn=S.rules.filter(r=>r.priceRule==='dynamic');
+  if(!dyn.length){toast('请先上传规则表','terr');return;}
+  const pid='cp'+(++cpCtr);
+  const today=fDate(new Date()),ms=today.slice(0,7)+'-01';
+  const div=document.createElement('div');div.className='cpr';div.id=pid;
+  div.innerHTML=`
+    <div class="crd">
+      <input type="date" id="${pid}s" value="${ms}">
+      <span class="crd-sep">—</span>
+      <input type="date" id="${pid}e" value="${today}">
+    </div>
+    <div class="cpc">
+      ${dyn.map(ch=>`<div class="cch"><span>${ch.channel}</span><input type="number" min="0" step="100" id="${pid}_${ch.channel}" placeholder="消耗金额"></div>`).join('')}
+      <button class="btn bp bxs" onclick="saveCostPeriod('${pid}')">保存</button>
+      <button class="btn br bxs" onclick="document.getElementById('${pid}').remove()">✕</button>
+    </div>`;
+  document.getElementById('cpList').appendChild(div);
+}
+function saveCostPeriod(pid){
+  const sd=document.getElementById(pid+'s')?.value||'';
+  const ed=document.getElementById(pid+'e')?.value||'';
+  const dyn=S.rules.filter(r=>r.priceRule==='dynamic');
+  let n=0;
+  dyn.forEach(ch=>{
+    const v=parseFloat(document.getElementById(`${pid}_${ch.channel}`)?.value||0);
+    if(v>0){
+      S.costPeriods=S.costPeriods.filter(p=>!(p.channel===ch.channel&&p.start===sd&&p.end===ed));
+      S.costPeriods.push({channel:ch.channel,amount:v,start:sd,end:ed});n++;
+    }
+  });
+  if(n) toast(`已保存 ${n} 条消耗`); else toast('请填写消耗金额','terr');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DATE RANGE ENGINE
+// ═══════════════════════════════════════════════════════════
+function computeDR(tf){
+  const now=new Date();
+  if(tf.period==='all'){
+    const ds=allR().map(r=>r.date).filter(Boolean).sort();
+    if(!ds.length) return{start:'',end:'',label:'全部数据',grain:'month'};
+    return{start:ds[0],end:ds[ds.length-1],label:'全部数据',grain:'month'};
+  }
+  if(tf.period==='custom') return{start:tf.cs,end:tf.ce,label:`${tf.cs} — ${tf.ce}`,grain:'day'};
+  if(tf.period==='week'){
+    const d=new Date(now);const dow=d.getDay()||7;
+    d.setDate(d.getDate()-dow+1+tf.offset*7);
+    const mon=fDate(d);const sun=new Date(d);sun.setDate(d.getDate()+6);const sunS=fDate(sun);
+    const wn=Math.ceil(((d-new Date(d.getFullYear(),0,1))/864e5+new Date(d.getFullYear(),0,1).getDay()+1)/7);
+    return{start:mon,end:sunS,label:`${mon.slice(5)} — ${sunS.slice(5)}（第${wn}周）`,grain:'day'};
+  }
+  if(tf.period==='month'){
+    const d=new Date(now.getFullYear(),now.getMonth()+tf.offset,1);
+    const y=d.getFullYear(),m=d.getMonth();
+    const last=new Date(y,m+1,0).getDate();
+    const ps=n=>String(n).padStart(2,'0');
+    return{start:`${y}-${ps(m+1)}-01`,end:`${y}-${ps(m+1)}-${ps(last)}`,label:`${y}年${m+1}月`,grain:'week'};
+  }
+  if(tf.period==='year'){
+    const y=now.getFullYear()+tf.offset;
+    return{start:`${y}-01-01`,end:`${y}-12-31`,label:`${y}年`,grain:'month'};
+  }
+}
+function filterR(start,end,group=null){
+  return allR().filter(r=>{
+    if(!r.date) return false;
+    if(start&&r.date<start) return false;
+    if(end&&r.date>end)     return false;
+    // 分组过滤：实时从名单查，不依赖记录里的旧 group 值
+    if(group&&lookupGroup(r.consultant)!==group) return false;
+    return true;
+  });
+}
+function chCostForRange(ch,start,end){
+  let total=0;
+  S.costPeriods.forEach(p=>{
+    if(p.channel!==ch) return;
+    const ps=p.start||'0000-01-01',pe=p.end||'9999-12-31';
+    const rs=start||'0000-01-01',re=end||'9999-12-31';
+    if(pe>=rs&&ps<=re) total+=p.amount;
+  });
+  return total;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ★ CORE CALCULATION ENGINE ★
+//
+//  动态单价规则：当日单价 = 当日该渠道消耗金额 ÷ 当日该渠道全公司加微总人数
+//  每位顾问的渠道消耗 = Σ(每天: 当天单价 × 该顾问当天加微数)
+//
+//  固定单价规则：消耗 = 固定单价 × 加微数
+// ═══════════════════════════════════════════════════════════
+
+// 获取某渠道某天的消耗金额
+// - 按天存储（start===end）：直接返回该天的值
+// - 区间存储（start!=end，手动录入）：amount 为区间总量，按自然日均摊到每天
+function chCostOnDay(ch, date){
+  let total=0;
+  S.costPeriods.forEach(p=>{
+    if(p.channel!==ch) return;
+    const ps=p.start||'0000-01-01', pe=p.end||'9999-12-31';
+    if(date<ps||date>pe) return;
+    if(p.start===p.end){
+      // 精确当天
+      total+=p.amount;
+    } else {
+      // 区间均摊：计算区间天数后按天分配
+      const d1=new Date(ps), d2=new Date(pe);
+      const days=Math.round((d2-d1)/86400000)+1;
+      total+=p.amount/days;
+    }
+  });
+  return total;
+}
+
+// 计算某渠道某天的全公司加微总量（用所有记录，不只是当前筛选集）
+function chAddOnDay(ch, date){
+  return allR().filter(r=>r.channel===ch && r.date===date)
+               .reduce((s,r)=>s+r.addCount, 0);
+}
+
+// 计算某渠道某天的动态单价
+function dynUnitPriceOnDay(ch, date){
+  const cost=chCostOnDay(ch, date);
+  const add=chAddOnDay(ch, date);
+  return add>0 ? cost/add : 0;
+}
+
+// 主计算：按顾问汇总，逐日计算动态单价
+function calcData(recs, start, end){
+  const rm={};S.rules.forEach(r=>{rm[r.channel]=r;});
+
+  // 按 顾问→渠道→日期 三级聚合
+  const agg={};
+  recs.forEach(r=>{
+    const group=lookupGroup(r.consultant);
+    if(!agg[r.consultant]) agg[r.consultant]={group, byChDate:{}};
+    const key=`${r.channel}|${r.date}`;
+    agg[r.consultant].byChDate[key]=(agg[r.consultant].byChDate[key]||0)+r.addCount;
+  });
+
+  return Object.entries(agg).map(([name, info])=>{
+    const budget=S.budgets[name]||50000;
+    let totalCost=0, totalAdd=0;
+
+    // 按渠道汇总（再按日展开计算）
+    const chMap={};
+    Object.entries(info.byChDate).forEach(([key, addCount])=>{
+      const [ch, date]=key.split('|');
+      if(!chMap[ch]) chMap[ch]={addCount:0, cost:0};
+      chMap[ch].addCount+=addCount;
+      totalAdd+=addCount;
+
+      const rule=rm[ch];
+      if(!rule) return;
+      if(rule.priceRule==='fixed'){
+        chMap[ch].cost+=rule.fixedPrice*addCount;
+      } else {
+        // ★ 动态单价：当日消耗 / 当日全渠道加微总量
+        const up=dynUnitPriceOnDay(ch, date);
+        chMap[ch].cost+=up*addCount;
+      }
+    });
+
+    const channels=Object.entries(chMap).map(([ch,v])=>{
+      const rule=rm[ch];
+      const isDyn=rule?.priceRule==='dynamic';
+      const avgUnitPrice=v.addCount>0?v.cost/v.addCount:0; // 展示用平均单价
+      const warn=isDyn&&!S.costPeriods.some(p=>p.channel===ch)?'需录入消耗':'';
+      totalCost+=v.cost;
+      return{ch, addCount:v.addCount, unitPrice:avgUnitPrice, cost:v.cost, isDyn, warn};
+    });
+
+    return{name, group:info.group, totalAdd, totalCost, budget,
+      remaining:budget-totalCost,
+      usage:budget>0?(totalCost/budget)*100:0,
+      channels};
+  }).sort((a,b)=>b.totalCost-a.totalCost);
+}
+
+// 渠道汇总（用于排行榜）
+function calcChs(recs, start, end){
+  const rm={};S.rules.forEach(r=>{rm[r.channel]=r;});
+  const chMap={};
+  recs.forEach(r=>{
+    if(!chMap[r.channel]) chMap[r.channel]={add:0, cost:0};
+    chMap[r.channel].add+=r.addCount;
+    const rule=rm[r.channel];
+    if(!rule) return;
+    if(rule.priceRule==='fixed'){
+      chMap[r.channel].cost+=rule.fixedPrice*r.addCount;
+    } else {
+      const up=dynUnitPriceOnDay(r.channel, r.date);
+      chMap[r.channel].cost+=up*r.addCount;
+    }
+  });
+  return Object.entries(chMap).map(([ch,v])=>({ch, add:v.add, cost:v.cost}))
+               .sort((a,b)=>b.cost-a.cost);
+}
+
+// 趋势图数据
+function calcTrend(recs, grain, start, end){
+  const rm={};S.rules.forEach(r=>{rm[r.channel]=r;});
+  const bkts={};
+  recs.forEach(r=>{
+    const k=toBkt(r.date, grain);
+    if(!bkts[k]) bkts[k]=[];
+    bkts[k].push(r);
+  });
+  return Object.entries(bkts).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,rs])=>{
+    let cost=0;
+    rs.forEach(r=>{
+      const rule=rm[r.channel];if(!rule) return;
+      if(rule.priceRule==='fixed'){
+        cost+=rule.fixedPrice*r.addCount;
+      } else {
+        cost+=dynUnitPriceOnDay(r.channel, r.date)*r.addCount;
+      }
+    });
+    return{k, cost, add:rs.reduce((s,r)=>s+r.addCount, 0)};
+  });
+}
+function toBkt(d,g){
+  if(!d) return '未知';
+  if(g==='day') return d;
+  if(g==='week'){const dt=new Date(d);const dw=dt.getDay()||7;dt.setDate(dt.getDate()-dw+1);return fDate(dt);}
+  if(g==='month') return d.slice(0,7);
+  return d.slice(0,4);
+}
+function bLbl(k,g){
+  if(g==='day')   return k.slice(5);
+  if(g==='week')  {const d=new Date(k);return `${d.getMonth()+1}/${d.getDate()}`;}
+  if(g==='month') {const[y,m]=k.split('-');return `${y.slice(2)}/${parseInt(m)}`;}
+  return k;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DEMO DATA  (6 months × 6 batches, team pre-loaded)
+// ═══════════════════════════════════════════════════════════
+function loadDemo(){
+  S.rules=[
+    {channel:'渠道A',priceRule:'dynamic',fixedPrice:null},
+    {channel:'渠道B',priceRule:'fixed',  fixedPrice:160},
+    {channel:'渠道C',priceRule:'fixed',  fixedPrice:100},
+    {channel:'渠道D',priceRule:'fixed',  fixedPrice:200},
+  ];
+  const consultants=[
+    {name:'张伟',group:'王主管组'},{name:'李娜',group:'王主管组'},{name:'王芳',group:'王主管组'},
+    {name:'刘洋',group:'李主管组'},{name:'陈静',group:'李主管组'},{name:'赵磊',group:'李主管组'},
+    {name:'周敏',group:'张主管组'},{name:'吴强',group:'张主管组'},
+  ];
+  S.team={'王主管':['张伟','李娜','王芳'],'李主管':['刘洋','陈静','赵磊'],'张主管':['周敏','吴强']};
+  syncTeamAccounts();
+  const chs=['渠道A','渠道B','渠道C','渠道D'];
+  const now=new Date();
+  S.batches=[];S.costPeriods=[];
+
+  for(let mo=0;mo<6;mo++){
+    const bS=new Date(now.getFullYear(),now.getMonth()-5+mo,1);
+    const bE=new Date(now.getFullYear(),now.getMonth()-4+mo,0);
+    const recs=[];
+    for(let d=new Date(bS);d<=bE;d.setDate(d.getDate()+1)){
+      const ds=fDate(new Date(d));
+      consultants.forEach(c=>{chs.forEach(ch=>{if(Math.random()>.42) recs.push({date:ds,consultant:c.name,group:c.group,channel:ch,addCount:Math.floor(Math.random()*12)+1});});});
+    }
+    S.batches.push({id:mo,name:`${bS.getFullYear()}年${bS.getMonth()+1}月加微数据.csv`,uploadTime:'演示',records:recs});
+    // Per-day cost entries: distribute monthly total across working days
+    const monthTotal=16000+Math.floor(Math.random()*6)*1000;
+    const workDays=recs.reduce((set,r)=>{set.add(r.date);return set;},new Set());
+    const dayAvg=workDays.size>0?monthTotal/workDays.size:0;
+    workDays.forEach(day=>{
+      S.costPeriods.push({channel:'渠道A',amount:Math.round(dayAvg),start:day,end:day});
+    });
+  }
+  consultants.forEach(c=>{S.budgets[c.name]=40000+Math.round(Math.random()*3)*10000;});
+  autoInitBudgets();
+
+  markDone('rulesCard','rulesStatus','✓ 4 条规则（演示）');
+  markDone('dataCard','dataStatus',`✓ 共 ${fmtN(allR().length)} 条（6 批）`);
+  markDone('costCard','costStatus','✓ 渠道A 每月消耗已设置');
+  markDone('teamCard','teamStatus','✓ 3 位主管，8 位顾问');
+  renderBatchList();renderCostManual();renderTeamGrid();showPreview();
+  toast('演示数据加载成功（6 个月历史）');
+  gp('dashboard');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TIME FILTER
+// ═══════════════════════════════════════════════════════════
+function setP(page,period,el){
+  const tf=S.tf[page];tf.period=period;if(period!=='custom')tf.offset=0;
+  el.closest('.ptabs').querySelectorAll('.ptab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  syncTF(page);triggerRender(page);
+}
+function stepP(page,dir){
+  const tf=S.tf[page];if(tf.period==='all'||tf.period==='custom') return;
+  tf.offset+=dir;syncTF(page);triggerRender(page);
+}
+function applyCustom(page){
+  const tf=S.tf[page];
+  tf.cs=document.getElementById(`${page}-cs`).value;
+  tf.ce=document.getElementById(`${page}-ce`).value;
+  syncTF(page);triggerRender(page);
+}
+function syncTF(page){
+  const tf=S.tf[page];const dr=computeDR(tf);
+  const isCust=tf.period==='custom';const isAll=tf.period==='all';
+  document.getElementById(`${page}-tnav`).style.display=(isCust||isAll)?'none':'flex';
+  document.getElementById(`${page}-crange`).classList.toggle('on',isCust);
+  if(!isCust&&!isAll) document.getElementById(`${page}-lbl`).textContent=dr?.label||'';
+  if(page==='dash'){
+    const cnt=filterR(dr?.start,dr?.end).length;
+    document.getElementById('dash-cnt').textContent=`${fmtN(cnt)} 条`;
+  }
+}
+function triggerRender(page){
+  if(page==='dash')   renderDash();
+  if(page==='detail') renderDetail();
+  if(page==='group')  renderGroupPage();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function renderDash(){
+  const dr=computeDR(S.tf.dash);
+  const fG=S.currentUser?.role==='supervisor'?S.currentUser.group:null;
+  const recs=filterR(dr.start,dr.end,fG);
+
+  if(!recs.length){
+    ['s1','s2','s3','s4'].forEach(id=>document.getElementById(id).textContent='—');
+    document.getElementById('mainTBody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--i4)">当前周期暂无数据</td></tr>';
+    return;
+  }
+  const data=calcData(recs,dr.start,dr.end);
+  const chs=calcChs(recs,dr.start,dr.end);
+  const totalCost=data.reduce((s,c)=>s+c.totalCost,0);
+  const totalAdd=data.reduce((s,c)=>s+c.totalAdd,0);
+  document.getElementById('s1').textContent=fmt(totalCost);
+  document.getElementById('s1s').textContent=dr.label;
+  document.getElementById('s2').textContent=data.length;
+  document.getElementById('s3').textContent=fmtN(totalAdd);
+  document.getElementById('s4').textContent=data.filter(c=>c.remaining<0).length;
+
+  // selects
+  const allCh=[...new Set(allR().map(r=>r.channel))].sort();
+  const allGr=[...new Set(allR().map(r=>r.group))].sort();
+  const chSel=document.getElementById('trendCh');const curCh=chSel.value;
+  chSel.innerHTML='<option value="">全渠道</option>'+allCh.map(c=>`<option value="${c}">${c}</option>`).join('');chSel.value=curCh;
+  const grSel=document.getElementById('trendGr');const curGr=grSel.value;
+  grSel.innerHTML='<option value="">全部组</option>'+allGr.map(g=>`<option value="${g}">${g}</option>`).join('');grSel.value=curGr;
+
+  let tRecs=recs;
+  if(chSel.value) tRecs=tRecs.filter(r=>r.channel===chSel.value);
+  if(grSel.value) tRecs=tRecs.filter(r=>r.group===grSel.value);
+  const trend=calcTrend(tRecs,dr.grain,dr.start,dr.end);
+  document.getElementById('trendSub').textContent=`${dr.label} · ${{day:'日',week:'周',month:'月',year:'年'}[dr.grain]}粒度`;
+  mkBar('trendChart',trend.map(t=>bLbl(t.k,dr.grain)),trend.map(t=>t.cost));
+
+  // rank
+  const maxC=chs[0]?.cost||1;
+  document.getElementById('rankList').innerHTML=chs.slice(0,8).map((c,i)=>`
+    <li class="ri">
+      <span class="rn ${i<3?'top':''}">${i+1}</span>
+      <div class="rb">
+        <div class="rname">${c.ch} <span style="font-size:10px;color:var(--i4)">· ${fmtN(c.add)}</span></div>
+        <div class="pb" style="height:2px"><div class="pf ${pCls(c.cost/maxC*100)}" style="width:${(c.cost/maxC*100).toFixed(1)}%"></div></div>
+      </div>
+      <span class="rval">${fmt(c.cost)}</span>
+    </li>`).join('');
+
+  // donut
+  const gm={};data.forEach(c=>{gm[c.group]=(gm[c.group]||0)+c.totalCost;});
+  mkDonut('groupChart',Object.keys(gm),Object.values(gm));
+  renderMainTable(data);populateCsel(data);
+}
+
+function renderMainTable(data){
+  const tb=document.getElementById('mainTBody');
+  if(!data.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--i4)">暂无数据</td></tr>';return;}
+  tb.innerHTML=data.map(c=>{
+    const p=Math.min(c.usage,100).toFixed(1);
+    return`<tr data-c="${c.name}" onclick="goDetail('${c.name}')">
+      <td style="font-weight:500">${c.name}</td>
+      <td><span class="tag tb">${c.group}</span></td>
+      <td class="mono">${fmtN(c.totalAdd)}</td>
+      <td class="mono">${fmt(c.totalCost)}</td>
+      <td class="mono">${fmt(c.budget)}</td>
+      <td class="mono" style="color:${c.remaining<0?'var(--red)':'var(--grn)'}">${fmt(c.remaining)}</td>
+      <td style="min-width:100px">
+        <div style="display:flex;align-items:center;gap:5px">
+          <div class="pb" style="flex:1"><div class="pf ${pCls(c.usage)}" style="width:${p}%"></div></div>
+          <span class="mono" style="font-size:10.5px;color:var(--i4)">${p}%</span>
+        </div>
+      </td>
+      <td>${c.usage>=100?'<span class="tag tr">超预算</span>':c.usage>=80?'<span class="tag tm">临近上限</span>':'<span class="tag tg">正常</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+function filterTable(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('#mainTBody tr[data-c]').forEach(r=>{r.style.display=r.dataset.c.toLowerCase().includes(q)?'':'none';});
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DETAIL PAGE
+// ═══════════════════════════════════════════════════════════
+function populateCsel(data){
+  const sel=document.getElementById('cSel');const cur=sel.value;
+  sel.innerHTML='<option value="">— 请选择顾问 —</option>'+data.map(c=>`<option value="${c.name}">${c.name}（${c.group}）</option>`).join('');
+  if(cur) sel.value=cur;
+}
+function goDetail(name){gp('detail');document.getElementById('cSel').value=name;renderDetail();}
+function renderDetail(){
+  const name=document.getElementById('cSel').value;
+  const el=document.getElementById('detailContent');
+  if(!name){el.innerHTML='<div class="empty"><div class="empty-ic">◎</div><p>请选择一位顾问</p></div>';return;}
+  const dr=computeDR(S.tf.detail);
+  const recs=filterR(dr.start,dr.end).filter(r=>r.consultant===name);
+  const allD=calcData(filterR(dr.start,dr.end),dr.start,dr.end);
+  const c=allD.find(d=>d.name===name);
+  if(!c){el.innerHTML=`<div class="empty"><div class="empty-ic">◎</div><p>${name} 在 ${dr.label} 内暂无数据</p></div>`;return;}
+  const rm={};S.rules.forEach(r=>{rm[r.channel]=r;});
+  const trend=calcTrend(recs,dr.grain,dr.start,dr.end);
+
+  const cards=c.channels.map(ch=>{
+    const rule=rm[ch.ch];const isDyn=rule?.priceRule==='dynamic';
+    const pl=isDyn?`动态 ${fmt(ch.unitPrice)}/人`:(rule?`固定 ${fmt(rule.fixedPrice)}/人`:'—');
+    const pct=c.budget>0?Math.min((ch.cost/c.budget)*100,100):0;
+    return`<div class="cc">
+      <div class="cc-hd">
+        <div><div class="cc-nm">${ch.ch}</div><div class="cc-pr">${pl}${ch.warn?' ⚠ '+ch.warn:''}</div></div>
+        <span class="tag ${isDyn?'tm':'tb'}">${isDyn?'动态':'固定'}</span>
+      </div>
+      <div class="cc-val">${fmt(ch.cost)}</div>
+      <div class="cc-sub">${fmtN(ch.addCount)} 人次加微</div>
+      <div class="pb"><div class="pf ${pCls(pct)}" style="width:${pct}%"></div></div>
+      <div class="plbl"><span>占预算 ${pct.toFixed(1)}%</span></div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div class="dh">
+      <div class="dav">${name.slice(0,1)}</div>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:600;letter-spacing:-.3px">${name}</div>
+        <div style="font-size:12px;color:var(--i3);margin-top:3px">${c.group} · ${dr.label} · 加微 ${fmtN(c.totalAdd)}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--i4);margin-bottom:3px">消耗 / 预算</div>
+        <div class="mono" style="font-size:16px;font-weight:500">${fmt(c.totalCost)} <span style="color:var(--i4);font-size:12px">/ ${fmt(c.budget)}</span></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="ch"><div class="ch-l"><span class="ct">消耗趋势</span><span class="cs">${dr.label}</span></div></div>
+      <div style="position:relative;height:145px"><canvas id="dtChart"></canvas></div>
+    </div>
+    <div class="dlbl">渠道明细</div>
+    <div class="cc-grid">${cards}</div>
+    <div class="card" style="margin-top:10px">
+      <div class="ch"><span class="ct">预算总览</span></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+        <div class="pb" style="flex:1;height:4px;border-radius:2px"><div class="pf ${pCls(c.usage)}" style="width:${Math.min(c.usage,100).toFixed(1)}%;height:4px"></div></div>
+        <span class="mono" style="font-size:13px;font-weight:500;color:${c.remaining<0?'var(--red)':'var(--ink)'}">${c.usage.toFixed(1)}%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--i4)">
+        <span>已消耗 ${fmt(c.totalCost)}</span><span>剩余 ${fmt(c.remaining)}</span><span>初始预算 ${fmt(c.budget)}</span>
+      </div>
+    </div>`;
+
+  setTimeout(()=>{
+    const cvs=document.getElementById('dtChart');if(!cvs) return;
+    if(S.charts.dt) S.charts.dt.destroy();
+    S.charts.dt=new Chart(cvs.getContext('2d'),{
+      type:'line',
+      data:{labels:trend.map(t=>bLbl(t.k,dr.grain)),datasets:[{
+        label:'消耗',data:trend.map(t=>t.cost),
+        borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.05)',
+        fill:true,tension:.35,pointRadius:2,pointHoverRadius:4,borderWidth:1.5
+      }]},
+      options:chartOpts()
+    });
+  },60);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GROUP PAGE
+// ═══════════════════════════════════════════════════════════
+function renderGroupPage(){
+  const u=S.currentUser;const el=document.getElementById('groupContent');
+  if(u?.role==='supervisor'){
+    el.innerHTML='<div id="gBody"></div>';
+    renderGroupBody(u.group,document.getElementById('gBody'));return;
+  }
+  // 优先从 S.team 名单取分组，其次从记录实时推断
+  let groups=[];
+  if(Object.keys(S.team).length){
+    groups=Object.keys(S.team).map(sup=>`${sup}组`).sort();
+  } else {
+    groups=[...new Set(allR().map(r=>lookupGroup(r.consultant)))].sort();
+  }
+  if(!groups.length){el.innerHTML='<div class="empty"><div class="empty-ic">◈</div><p>暂无数据</p></div>';return;}
+  const tabs=groups.map((g,i)=>`<div class="gtab ${i===0?'on':''}" onclick="selGTab('${g}',this)">${g}</div>`).join('');
+  el.innerHTML=`<div class="gtabs">${tabs}</div><div id="gBody"></div>`;
+  renderGroupBody(groups[0],document.getElementById('gBody'));
+}
+function selGTab(g,el){
+  document.querySelectorAll('#groupContent .gtab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  renderGroupBody(g,document.getElementById('gBody'));
+}
+function renderGroupBody(group,el){
+  const dr=computeDR(S.tf.group);
+  const recs=filterR(dr.start,dr.end,group);
+  if(!recs.length){el.innerHTML=`<div class="empty"><div class="empty-ic">◈</div><p>${group} 在 ${dr.label} 内暂无数据</p></div>`;return;}
+  const data=calcData(recs,dr.start,dr.end);
+  const chs=calcChs(recs,dr.start,dr.end);
+  const totalCost=data.reduce((s,c)=>s+c.totalCost,0);
+  const totalAdd=data.reduce((s,c)=>s+c.totalAdd,0);
+  const over=data.filter(c=>c.remaining<0).length;
+  const maxC=chs[0]?.cost||1;
+
+  el.innerHTML=`
+    <div class="stats">
+      <div class="sc"><div class="sc-bar" style="background:var(--blu)"></div><div class="sc-lbl">组内总消耗</div><div class="sc-val">${fmt(totalCost)}</div><div class="sc-sub">${dr.label}</div></div>
+      <div class="sc"><div class="sc-bar" style="background:var(--grn)"></div><div class="sc-lbl">顾问人数</div><div class="sc-val">${data.length}</div></div>
+      <div class="sc"><div class="sc-bar" style="background:var(--amb)"></div><div class="sc-lbl">总加微数</div><div class="sc-val">${fmtN(totalAdd)}</div></div>
+      <div class="sc"><div class="sc-bar" style="background:var(--red)"></div><div class="sc-lbl">超预算顾问</div><div class="sc-val">${over}</div></div>
+    </div>
+    <div class="g2" style="margin-bottom:10px">
+      <div class="card">
+        <div class="ch"><div class="ct">渠道消耗</div></div>
+        <ul class="rl">${chs.map((c,i)=>`<li class="ri">
+          <span class="rn ${i<3?'top':''}">${i+1}</span>
+          <div class="rb">
+            <div class="rname">${c.ch} <span style="font-size:10px;color:var(--i4)">· ${fmtN(c.add)}</span></div>
+            <div class="pb" style="height:2px"><div class="pf ${pCls(c.cost/maxC*100)}" style="width:${(c.cost/maxC*100).toFixed(1)}%"></div></div>
+          </div>
+          <span class="rval">${fmt(c.cost)}</span></li>`).join('')}</ul>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">顾问消耗对比</div></div>
+        <div style="position:relative;height:175px"><canvas id="gcChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">本组顾问明细</div></div>
+      <div class="tw"><table>
+        <thead><tr><th>顾问</th><th>加微数</th><th>消耗</th><th>预算</th><th>剩余</th><th>使用率</th><th>状态</th></tr></thead>
+        <tbody>${data.map(c=>{const p=Math.min(c.usage,100).toFixed(1);return`<tr>
+          <td style="font-weight:500">${c.name}</td>
+          <td class="mono">${fmtN(c.totalAdd)}</td>
+          <td class="mono">${fmt(c.totalCost)}</td>
+          <td class="mono">${fmt(c.budget)}</td>
+          <td class="mono" style="color:${c.remaining<0?'var(--red)':'var(--grn)'}">${fmt(c.remaining)}</td>
+          <td style="min-width:95px">
+            <div style="display:flex;align-items:center;gap:5px">
+              <div class="pb" style="flex:1"><div class="pf ${pCls(c.usage)}" style="width:${p}%"></div></div>
+              <span class="mono" style="font-size:10.5px;color:var(--i4)">${p}%</span>
+            </div>
+          </td>
+          <td>${c.usage>=100?'<span class="tag tr">超预算</span>':c.usage>=80?'<span class="tag tm">临近上限</span>':'<span class="tag tg">正常</span>'}</td>
+        </tr>`}).join('')}</tbody>
+      </table></div>
+    </div>`;
+
+  setTimeout(()=>{
+    const cvs=document.getElementById('gcChart');if(!cvs) return;
+    if(S.charts.gc) S.charts.gc.destroy();
+    S.charts.gc=new Chart(cvs.getContext('2d'),{
+      type:'bar',
+      data:{labels:data.map(c=>c.name),datasets:[{
+        label:'消耗',data:data.map(c=>c.totalCost),
+        backgroundColor:'#2563eb',borderRadius:3,borderSkipped:false
+      }]},
+      options:chartOpts()
+    });
+  },60);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CHARTS
+// ═══════════════════════════════════════════════════════════
+function chartOpts(extra={}){
+  return{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:c=>` ${fmt(c.raw)}`}}
+    },
+    scales:{
+      x:{ticks:{color:'#a1a1aa',font:{size:10}},grid:{display:false}},
+      y:{ticks:{color:'#a1a1aa',font:{size:10},callback:v=>fmt(v)},grid:{color:'#e3e2dd',drawBorder:false}}
+    },
+    ...extra
+  };
+}
+function mkBar(id,labels,values){
+  const ctx=document.getElementById(id)?.getContext('2d');if(!ctx) return;
+  if(S.charts[id]) S.charts[id].destroy();
+  S.charts[id]=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{label:'消耗',data:values,backgroundColor:'#2563eb',borderRadius:3,borderSkipped:false}]},
+    options:chartOpts()
+  });
+}
+function mkDonut(id,labels,values){
+  const ctx=document.getElementById(id)?.getContext('2d');if(!ctx) return;
+  if(S.charts[id]) S.charts[id].destroy();
+  const palette=['#2563eb','#16a34a','#d97706','#dc2626','#7c3aed','#0891b2'];
+  S.charts[id]=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels,datasets:[{data:values,backgroundColor:palette,borderWidth:0,hoverOffset:3}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'66%',
+      plugins:{
+        legend:{position:'bottom',labels:{color:'#52525b',font:{size:10.5},padding:10,boxWidth:9}},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)}`}}
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ADMIN MODAL
+// ═══════════════════════════════════════════════════════════
+function openAdmin(){renderAccList();renderBudgetList();document.getElementById('adminModal').classList.add('on');}
+function closeAdmin(){document.getElementById('adminModal').classList.remove('on');}
+function mTab(i){
+  document.querySelectorAll('.mtab').forEach((t,j)=>t.classList.toggle('on',j===i));
+  document.querySelectorAll('.mtp').forEach((p,j)=>p.classList.toggle('on',j===i));
+}
+function renderAccList(){
+  document.getElementById('accList').innerHTML=S.accounts.map((a,i)=>`
+    <li class="acc-row">
+      <div class="uav" style="width:22px;height:22px;font-size:9px;border-radius:3px">${a.u.slice(0,1)}</div>
+      <span class="acc-name">${a.u}</span>
+      <span class="tag ${a.role==='admin'?'tm':'tb'}">${a.role==='admin'?'管理员':'组长'}</span>
+      <span style="font-size:11px;color:var(--i4)">${a.group||'全局'}</span>
+      ${i===0?'<span style="font-size:10px;color:var(--i4)">内置</span>':`<button class="btn br bxs" onclick="delAcc(${i})">删除</button>`}
+    </li>`).join('');
+}
+function delAcc(i){S.accounts.splice(i,1);renderAccList();toast('账号已删除');}
+function addAccount(){
+  const u=document.getElementById('newUN').value.trim();
+  const p=document.getElementById('newPW').value.trim();
+  const g=document.getElementById('newGrp').value.trim();
+  const r=document.getElementById('newRole').value;
+  if(!u||!p){toast('请填写用户名和密码','terr');return;}
+  if(S.accounts.find(a=>a.u===u)){toast('用户名已存在','terr');return;}
+  S.accounts.push({u,p,role:r,group:g});
+  ['newUN','newPW','newGrp'].forEach(id=>document.getElementById(id).value='');
+  renderAccList();toast('账号添加成功');
+}
+function renderBudgetList(){
+  const data=calcData(allR(),'','');
+  document.getElementById('budgetList').innerHTML=data.length
+    ?data.map(c=>`<div class="brow"><label>${c.name} <span style="font-size:10.5px;color:var(--i4)">(${c.group})</span></label><input type="number" id="b_${c.name}" value="${S.budgets[c.name]||50000}" min="0" step="1000"></div>`).join('')
+    :'<p style="color:var(--i4);font-size:12.5px">请先上传顾问数据</p>';
+}
+function applyDefBudget(){
+  const def=parseFloat(document.getElementById('defBudget').value)||50000;
+  calcData(allR(),'','').forEach(c=>{S.budgets[c.name]=def;const el=document.getElementById(`b_${c.name}`);if(el)el.value=def;});
+  toast('已批量应用');
+}
+function saveAdmin(){
+  calcData(allR(),'','').forEach(c=>{const el=document.getElementById(`b_${c.name}`);if(el)S.budgets[c.name]=parseFloat(el.value)||50000;});
+  closeAdmin();toast('设置已保存');
+  if(document.getElementById('page-dashboard').classList.contains('on')) renderDash();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════
+const PT={upload:'数据上传',dashboard:'管理仪表盘',detail:'顾问明细',group:'小组视图',team:'人员名单'};
+function gp(id){
+  document.querySelectorAll('.pc').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.getElementById(`page-${id}`).classList.add('on');
+  const n=document.getElementById(`nav-${id}`);if(n)n.classList.add('on');
+  document.getElementById('pageTitle').textContent=PT[id]||'';
+  if(id==='dashboard'){syncTF('dash');renderDash();}
+  if(id==='group'){syncTF('group');setTimeout(()=>renderGroupPage(),10);}
+  if(id==='detail'){
+    syncTF('detail');
+    const d=calcData(allR(),'','');if(d.length)populateCsel(d);
+    renderDetail();
+  }
+  if(id==='team') renderTeamGrid();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PREVIEW
+// ═══════════════════════════════════════════════════════════
+function showPreview(){
+  const recs=allR();
+  if(!recs.length){document.getElementById('previewSection').style.display='none';return;}
+  document.getElementById('previewSection').style.display='block';
+  const cs=[...new Set(recs.map(r=>r.consultant))];
+  const chs=[...new Set(recs.map(r=>r.channel))];
+  const gs=[...new Set(recs.map(r=>r.group))];
+  const ds=recs.map(r=>r.date).filter(Boolean).sort();
+  document.getElementById('previewContent').innerHTML=`
+    <div class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:8px">
+      <div class="sc"><div class="sc-bar" style="background:var(--blu)"></div><div class="sc-lbl">总记录数</div><div class="sc-val">${fmtN(recs.length)}</div><div class="sc-sub">${S.batches.length} 批</div></div>
+      <div class="sc"><div class="sc-bar" style="background:var(--grn)"></div><div class="sc-lbl">顾问人数</div><div class="sc-val">${cs.length}</div></div>
+      <div class="sc"><div class="sc-bar" style="background:var(--amb)"></div><div class="sc-lbl">渠道数量</div><div class="sc-val">${chs.length}</div></div>
+      <div class="sc"><div class="sc-bar" style="background:var(--red)"></div><div class="sc-lbl">小组数量</div><div class="sc-val">${gs.length}</div></div>
+    </div>
+    <p style="font-size:11.5px;color:var(--i4)">日期范围：${ds[0]||'—'} → ${ds[ds.length-1]||'—'}</p>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SAMPLE CSV DOWNLOAD
+// ═══════════════════════════════════════════════════════════
+function dlCSV(type){
+  const map={
+    rules:['rules_sample.csv','渠道名称,单价规则\n渠道A,动态\n渠道B,160\n渠道C,100\n渠道D,200'],
+    data: ['data_sample.csv',
+      // 第1列：顾问姓名，第2列：渠道名称，第3列起：日期（YYYY-MM-DD），值为加微数（0或空代表无）
+      '顾问姓名,渠道名称,2024-01-01,2024-01-02,2024-01-03,2024-01-04,2024-01-05\n' +
+      '张伟,渠道B,12,9,11,,14\n' +
+      '张伟,渠道A,5,,7,3,\n' +
+      '李娜,渠道C,8,10,6,9,12\n' +
+      '李娜,渠道B,,4,,7,5\n' +
+      '王芳,渠道A,6,,9,4,7\n' +
+      '刘洋,渠道D,11,8,13,,10\n' +
+      '陈静,渠道C,7,5,,8,6\n' +
+      '赵磊,渠道B,9,,12,5,'
+    ],
+    cost: ['cost_sample.csv',
+      // 第1列：渠道名称，第2列起：日期（YYYY-MM-DD），值为当日消耗金额（留空代表无）
+      '渠道名称,2024-01-01,2024-01-02,2024-01-03,2024-01-04,2024-01-05\n' +
+      '渠道A,1800,2100,1950,1700,2300'
+    ],
+    team: ['team_sample.csv','主管姓名,顾问姓名\n王主管,张伟\n王主管,李娜\n王主管,王芳\n李主管,刘洋\n李主管,陈静\n李主管,赵磊\n张主管,周敏\n张主管,吴强'],
+  };
+  const[fn,content]=map[type];
+  const blob=new Blob(['\uFEFF'+content],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;a.click();
+}
+</script>
+</body>
+</html>
